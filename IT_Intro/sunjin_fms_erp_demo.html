@@ -1,0 +1,1440 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SUNJIN LOGISTICS · FMS ↔ SAP ERP Interface Portal</title>
+
+<!-- Bootstrap 5 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- FontAwesome -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+<!-- Inter font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<style>
+  :root{
+    --sap-shell:#354a5f;        /* dark shell bar */
+    --sap-shell-2:#2b3c4e;
+    --sap-blue:#0a6ed1;         /* brand action blue */
+    --sap-blue-d:#0854a0;
+    --sap-bg:#f5f6f7;           /* app background */
+    --sap-card:#ffffff;
+    --sap-line:#e5e7ea;
+    --sap-text:#1d2d3e;
+    --sap-muted:#6a7888;
+    --sap-green:#107e3e;
+    --sap-orange:#e9730c;
+    --sap-red:#bb0000;
+    --sap-yellow:#e8b339;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(30,45,60,.06),0 3px 10px rgba(30,45,60,.06);
+  }
+  *{scroll-behavior:smooth}
+  body{
+    font-family:'Inter',-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--sap-bg);color:var(--sap-text);
+    font-size:14px;
+  }
+  /* ---------- Shell bar ---------- */
+  .shellbar{
+    height:48px;background:linear-gradient(180deg,var(--sap-shell),var(--sap-shell-2));
+    color:#fff;display:flex;align-items:center;position:sticky;top:0;z-index:1040;
+    padding:0 12px;box-shadow:0 1px 4px rgba(0,0,0,.25);
+  }
+  .shellbar .brand{font-weight:700;letter-spacing:.4px;display:flex;align-items:center;gap:9px}
+  .shellbar .brand .logo{
+    width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#0a6ed1,#41b5ff);
+    display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 0 2px rgba(255,255,255,.12) inset
+  }
+  .shellbar .sub{font-size:11px;color:#c6d2dc;font-weight:500;margin-left:2px}
+  .shellbar .env-badge{font-size:10px;background:rgba(255,255,255,.14);padding:2px 8px;border-radius:20px;letter-spacing:.5px}
+  .shellbar .icon-btn{color:#dbe4ec;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;transition:.15s}
+  .shellbar .icon-btn:hover{background:rgba(255,255,255,.12)}
+  .shellbar .avatar{width:30px;height:30px;border-radius:50%;background:#0a6ed1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+
+  /* ---------- Layout ---------- */
+  .app{display:flex;min-height:calc(100vh - 48px)}
+  .sidebar{
+    width:250px;background:#fff;border-right:1px solid var(--sap-line);
+    padding:10px 0;flex-shrink:0;position:sticky;top:48px;height:calc(100vh - 48px);overflow-y:auto;
+  }
+  .sidebar .grp{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--sap-muted);
+    padding:12px 18px 5px;font-weight:700}
+  .navlink{
+    display:flex;align-items:center;gap:11px;padding:9px 18px;color:var(--sap-text);cursor:pointer;
+    font-weight:500;border-left:3px solid transparent;transition:.13s;font-size:13.5px;text-decoration:none;
+  }
+  .navlink i{width:18px;text-align:center;color:var(--sap-muted);font-size:13px}
+  .navlink:hover{background:#f0f5fb}
+  .navlink.active{background:#eaf3fc;border-left-color:var(--sap-blue);color:var(--sap-blue-d);font-weight:600}
+  .navlink.active i{color:var(--sap-blue)}
+  .content{flex:1;min-width:0;padding:20px 26px 60px}
+  @media(max-width:991px){
+    .content{padding:16px 14px 60px}
+  }
+
+  /* ---------- Common ---------- */
+  .page{display:none;animation:fade .35s ease}
+  .page.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .page-title{font-size:20px;font-weight:700;margin:0}
+  .page-sub{color:var(--sap-muted);font-size:13px;margin-top:2px}
+  .breadcrumb-mini{font-size:11.5px;color:var(--sap-muted);margin-bottom:2px;letter-spacing:.3px}
+  .card{border:1px solid var(--sap-line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card-header{background:#fff;border-bottom:1px solid var(--sap-line);font-weight:600;font-size:14px;padding:.7rem 1rem;border-radius:var(--radius) var(--radius) 0 0!important}
+  .kpi{background:#fff;border:1px solid var(--sap-line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);height:100%;position:relative;overflow:hidden}
+  .kpi .ic{position:absolute;right:-6px;top:-6px;font-size:58px;opacity:.06}
+  .kpi .lbl{font-size:12px;color:var(--sap-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  .kpi .val{font-size:28px;font-weight:700;line-height:1.1;margin-top:6px}
+  .kpi .delta{font-size:11.5px;font-weight:600;margin-top:4px}
+  .up{color:var(--sap-green)} .down{color:var(--sap-red)}
+
+  .status-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .st-success{background:#e6f4ea;color:var(--sap-green)}
+  .st-processing{background:#fdf2e2;color:var(--sap-orange)}
+  .st-error{background:#fde8e8;color:var(--sap-red)}
+  .st-paid{background:#e6f4ea;color:var(--sap-green)}
+  .st-unpaid{background:#eef1f5;color:#5a6b7b}
+  .st-overdue{background:#fde8e8;color:var(--sap-red)}
+  .st-intransit{background:#eaf3fc;color:var(--sap-blue-d)}
+  .st-delivered{background:#e6f4ea;color:var(--sap-green)}
+  .st-hold{background:#fdf2e2;color:var(--sap-orange)}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+  table.sap{font-size:13px}
+  table.sap thead th{background:#f2f4f6;color:#48586a;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--sap-line);white-space:nowrap;cursor:pointer;user-select:none}
+  table.sap thead th .sorti{opacity:.35;font-size:10px;margin-left:3px}
+  table.sap tbody td{vertical-align:middle;border-bottom:1px solid #eef0f2}
+  table.sap tbody tr{transition:.1s}
+  table.sap tbody tr:hover{background:#f6fafe;cursor:pointer}
+  .mono{font-variant-numeric:tabular-nums;font-family:'Inter',monospace;letter-spacing:.2px}
+  .ref-link{color:var(--sap-blue);font-weight:600;text-decoration:none}
+  .ref-link:hover{text-decoration:underline}
+
+  .btn-sap{background:var(--sap-blue);border-color:var(--sap-blue);color:#fff;font-weight:600;font-size:13px}
+  .btn-sap:hover{background:var(--sap-blue-d);border-color:var(--sap-blue-d);color:#fff}
+  .btn-outline-sap{border-color:var(--sap-blue);color:var(--sap-blue);font-weight:600;font-size:13px}
+  .btn-outline-sap:hover{background:var(--sap-blue);color:#fff}
+  .form-control,.form-select{font-size:13px}
+  .form-control:focus,.form-select:focus{border-color:var(--sap-blue);box-shadow:0 0 0 .18rem rgba(10,110,209,.15)}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .toolbar .search{max-width:260px}
+  .chip{font-size:11px;background:#eef1f5;color:#48586a;padding:2px 9px;border-radius:20px;font-weight:600}
+
+  /* ---------- Loading overlay ---------- */
+  #loading{position:fixed;inset:0;background:rgba(245,246,247,.75);backdrop-filter:blur(2px);z-index:2000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+  #loading.show{display:flex}
+  .spin{width:46px;height:46px;border:4px solid #d7e3ee;border-top-color:var(--sap-blue);border-radius:50%;animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    background:radial-gradient(1200px 400px at 15% -20%,rgba(65,181,255,.25),transparent),
+               linear-gradient(120deg,#0a2540,#0e3a63 55%,#0a6ed1);
+    color:#fff;border-radius:16px;padding:38px 34px;position:relative;overflow:hidden
+  }
+  .hero h1{font-size:30px;font-weight:700;line-height:1.15;margin:0}
+  .hero p{color:#cfe0ef;max-width:640px;margin-top:12px;font-size:15px}
+  .hero .grid-deco{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:34px 34px;opacity:.5;mask-image:linear-gradient(90deg,transparent,#000)}
+  .hero .stat{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:14px 16px;backdrop-filter:blur(4px)}
+  .hero .stat .n{font-size:24px;font-weight:700}
+  .hero .stat .l{font-size:11.5px;color:#bcd2e6;letter-spacing:.3px}
+
+  .feature-ic{width:42px;height:42px;border-radius:11px;background:#eaf3fc;color:var(--sap-blue);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+
+  /* ---------- Interface animation ---------- */
+  .iface-stage{position:relative;background:linear-gradient(180deg,#0d2033,#12314c);border-radius:16px;padding:34px 20px;overflow:hidden;min-height:290px}
+  .iface-stage .grid-deco{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:30px 30px}
+  .node{position:relative;z-index:3;width:170px;border-radius:14px;padding:16px;color:#fff;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+  .node.sap{background:linear-gradient(135deg,#0a6ed1,#075aad)}
+  .node.fms{background:linear-gradient(135deg,#0f9d58,#0b7a43)}
+  .node .nt{font-size:15px;font-weight:700}
+  .node .ns{font-size:11px;opacity:.85;margin-top:2px}
+  .node .nic{font-size:26px;margin-bottom:6px}
+  .wire{position:relative;flex:1;height:4px;background:rgba(255,255,255,.12);border-radius:4px;min-width:70px;z-index:1}
+  .packet{position:absolute;top:50%;left:0;transform:translateY(-50%);font-size:10px;font-weight:700;color:#0d2033;background:#ffd257;padding:3px 8px;border-radius:20px;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.35);opacity:0}
+  .packet.run{animation:flow 2.4s linear infinite}
+  .packet.back{background:#7ee3a6}
+  .packet.back.run{animation:flowback 2.4s linear infinite}
+  @keyframes flow{0%{left:-4%;opacity:0}8%{opacity:1}92%{opacity:1}100%{left:100%;opacity:0}}
+  @keyframes flowback{0%{left:100%;opacity:0}8%{opacity:1}92%{opacity:1}100%{left:-4%;opacity:0}}
+  .iface-log{background:#08151f;border:1px solid #143049;border-radius:12px;font-family:monospace;font-size:12px;color:#8fe6b4;padding:12px 14px;height:170px;overflow:auto}
+  .iface-log .t{color:#5a7a92}
+  .iface-log .er{color:#ff8a8a}
+  .iface-log .wn{color:#ffd257}
+
+  /* ---------- Process stepper ---------- */
+  .flow{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:6px 2px}
+  .flow-step{min-width:150px;flex:1;text-align:center;position:relative;padding:6px 8px}
+  .flow-step .circle{width:52px;height:52px;border-radius:14px;background:#eaf3fc;color:var(--sap-blue);display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 8px;transition:.3s;border:2px solid transparent}
+  .flow-step.on .circle{background:var(--sap-blue);color:#fff;transform:scale(1.06);box-shadow:0 8px 18px rgba(10,110,209,.35)}
+  .flow-step .ft{font-weight:700;font-size:13px}
+  .flow-step .fd{font-size:11px;color:var(--sap-muted);margin-top:2px}
+  .flow-step:not(:last-child):after{content:"";position:absolute;top:32px;right:-2px;width:100%;height:2px;background:linear-gradient(90deg,#cfdded,#eef1f5);z-index:-1}
+
+  /* ---------- Timeline ---------- */
+  .tl{position:relative;padding-left:26px}
+  .tl:before{content:"";position:absolute;left:9px;top:4px;bottom:4px;width:2px;background:#dbe4ec}
+  .tl-item{position:relative;padding:0 0 18px 8px}
+  .tl-item .tl-dot{position:absolute;left:-24px;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid #cbd6e0;display:flex;align-items:center;justify-content:center}
+  .tl-item.done .tl-dot{border-color:var(--sap-green);background:var(--sap-green)}
+  .tl-item.current .tl-dot{border-color:var(--sap-blue);background:var(--sap-blue);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(10,110,209,.4)}70%{box-shadow:0 0 0 8px rgba(10,110,209,0)}100%{box-shadow:0 0 0 0 rgba(10,110,209,0)}}
+  .tl-item .tl-t{font-weight:600;font-size:13.5px}
+  .tl-item .tl-time{font-size:11.5px;color:var(--sap-muted)}
+  .tl-item.pending{opacity:.5}
+
+  .doc-preview{background:#fff;border:1px solid var(--sap-line);border-radius:8px;padding:22px;font-size:12.5px}
+  .doc-preview h6{font-weight:700;margin:0}
+  .doc-table th,.doc-table td{padding:5px 8px;font-size:12px}
+  .doc-stamp{border:2px solid var(--sap-blue);color:var(--sap-blue);font-weight:700;padding:4px 12px;border-radius:6px;transform:rotate(-8deg);display:inline-block;font-size:12px;letter-spacing:1px;opacity:.85}
+
+  .progress{height:8px;background:#eef1f5}
+  .accordion-button{font-size:14px;font-weight:600}
+  .accordion-button:not(.collapsed){background:#eaf3fc;color:var(--sap-blue-d)}
+  .accordion-button:focus{box-shadow:none;border-color:var(--sap-line)}
+
+  .badge-soft{background:#eef1f5;color:#48586a;font-weight:600}
+  .table-wrap{overflow-x:auto}
+  .small-muted{font-size:11.5px;color:var(--sap-muted)}
+  .toast-container{z-index:3000}
+
+  /* mobile sidebar as offcanvas already handled by BS */
+  @media(max-width:991px){
+    .desktop-side{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Shell bar ===== -->
+<div class="shellbar">
+  <button class="icon-btn d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#mSide"><i class="fa-solid fa-bars"></i></button>
+  <div class="brand ms-1">
+    <span class="logo"><i class="fa-solid fa-ship"></i></span>
+    <span>SUNJIN LOGISTICS<span class="sub d-none d-sm-inline"> · FMS Portal</span></span>
+  </div>
+  <span class="env-badge ms-3 d-none d-md-inline">SAP ERP ↔ FMS · LIVE</span>
+  <div class="ms-auto d-flex align-items-center gap-1">
+    <span class="icon-btn" onclick="toast('알림','새 인터페이스 전송 3건이 수신되었습니다.','info')"><i class="fa-regular fa-bell"></i></span>
+    <span class="icon-btn d-none d-sm-flex" onclick="toast('도움말','우측 상단 검색 및 필터로 데이터를 조회하세요.','info')"><i class="fa-regular fa-circle-question"></i></span>
+    <span class="avatar ms-1" title="IT Manager">SJ</span>
+  </div>
+</div>
+
+<div class="app">
+  <!-- ===== Desktop sidebar ===== -->
+  <nav class="sidebar desktop-side" id="deskNav"></nav>
+
+  <!-- ===== Mobile offcanvas sidebar ===== -->
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="mSide" style="width:250px">
+    <div class="offcanvas-header shellbar" style="position:static">
+      <span class="brand"><span class="logo"><i class="fa-solid fa-ship"></i></span> SUNJIN</span>
+      <button class="btn-close btn-close-white ms-auto" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0"><nav class="sidebar" style="width:100%;position:static;height:auto;border:0" id="mobNav"></nav></div>
+  </div>
+
+  <!-- ===== Content ===== -->
+  <main class="content">
+
+    <!-- ===================== HOME ===================== -->
+    <section id="home" class="page active">
+      <div class="hero">
+        <div class="grid-deco"></div>
+        <div style="position:relative;z-index:2">
+          <span class="chip" style="background:rgba(255,255,255,.16);color:#dff0ff">SAP ERP × SUNJIN FMS</span>
+          <h1 class="mt-3">고객사 ERP와 SUNJIN FMS를<br>하나의 물류 데이터로 연결합니다</h1>
+          <p>S/R · C/I · P/L 정보를 SAP ERP에서 FMS로 자동 전송하고, 오더·B/L·청구·화물추적 결과를 실시간으로 회신받습니다. 이중 입력을 없애고, 물류 가시성을 한 화면에서 확보하세요.</p>
+          <div class="d-flex gap-2 flex-wrap mt-3">
+            <button class="btn btn-light fw-semibold" onclick="go('arch')"><i class="fa-solid fa-diagram-project me-2"></i>연동 구조 보기</button>
+            <button class="btn btn-outline-light fw-semibold" onclick="go('erpsend')"><i class="fa-solid fa-right-left me-2"></i>전송현황 데모</button>
+          </div>
+          <div class="row g-3 mt-3">
+            <div class="col-6 col-lg-3"><div class="stat"><div class="n" id="hStatSR">30</div><div class="l">S/R 전송</div></div></div>
+            <div class="col-6 col-lg-3"><div class="stat"><div class="n" id="hStatBL">30</div><div class="l">B/L 발행</div></div></div>
+            <div class="col-6 col-lg-3"><div class="stat"><div class="n" id="hStatInv">20</div><div class="l">Invoice</div></div></div>
+            <div class="col-6 col-lg-3"><div class="stat"><div class="n">99.4%</div><div class="l">전송 성공률</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-4"><div class="card p-3 h-100"><div class="feature-ic mb-2"><i class="fa-solid fa-arrows-rotate"></i></div><h6 class="fw-bold">이중 입력 제거</h6><p class="small-muted mb-0">ERP에 입력한 선적 정보를 FMS에 다시 입력할 필요가 없습니다. 인터페이스로 자동 동기화됩니다.</p></div></div>
+        <div class="col-md-4"><div class="card p-3 h-100"><div class="feature-ic mb-2"><i class="fa-solid fa-eye"></i></div><h6 class="fw-bold">실시간 가시성</h6><p class="small-muted mb-0">오더 생성부터 B/L, 통관, 배송까지 전 구간 상태를 하나의 대시보드에서 추적합니다.</p></div></div>
+        <div class="col-md-4"><div class="card p-3 h-100"><div class="feature-ic mb-2"><i class="fa-solid fa-shield-halved"></i></div><h6 class="fw-bold">데이터 정합성</h6><p class="small-muted mb-0">표준 IDoc/REST 매핑으로 문서번호·금액·수량이 양 시스템에서 일치합니다.</p></div></div>
+      </div>
+    </section>
+
+    <!-- ===================== 회사소개 ===================== -->
+    <section id="company" class="page">
+      <div class="breadcrumb-mini">Home / 회사소개</div>
+      <h2 class="page-title">회사소개</h2>
+      <p class="page-sub">국제물류주선 · Digital Forwarding Partner</p>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-7">
+          <div class="card p-4 h-100">
+            <h5 class="fw-bold mb-2"><i class="fa-solid fa-ship text-primary me-2"></i>SUNJIN LOGISTICS</h5>
+            <p class="small-muted">SUNJIN LOGISTICS는 해상·항공 국제물류주선(Freight Forwarding)을 전문으로 하는 종합물류 기업입니다. 자체 개발한 FMS(Forwarding Management System)를 기반으로, 고객사의 SAP ERP와 표준 인터페이스를 통해 선적요청부터 정산까지의 전 과정을 디지털로 연결합니다.</p>
+            <div class="row g-3 mt-1">
+              <div class="col-6"><div class="p-3 border rounded"><div class="small-muted">설립/운영</div><div class="fw-bold">Global Forwarding Network</div></div></div>
+              <div class="col-6"><div class="p-3 border rounded"><div class="small-muted">핵심 시스템</div><div class="fw-bold">SUNJIN FMS · EDI · SAP I/F</div></div></div>
+            </div>
+            <div class="mt-3 p-3 rounded" style="background:#f2f6fb">
+              <div class="fw-bold mb-1"><i class="fa-solid fa-location-dot text-primary me-2"></i>본사 주소</div>
+              <div class="small-muted">Sunjin Bldg. 4th Fl. Yangjae-daero 1553, Gangdong-gu, Seoul, Korea</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card p-4 h-100">
+            <h6 class="fw-bold mb-3">Services</h6>
+            <div class="d-flex gap-3 mb-3"><div class="feature-ic"><i class="fa-solid fa-anchor"></i></div><div><div class="fw-semibold">해상운송 (FCL / LCL)</div><div class="small-muted">전 세계 주요 항로 정기 서비스 및 콘솔 서비스</div></div></div>
+            <div class="d-flex gap-3 mb-3"><div class="feature-ic"><i class="fa-solid fa-plane"></i></div><div><div class="fw-semibold">항공운송</div><div class="small-muted">긴급화물·프로젝트 화물 항공 포워딩</div></div></div>
+            <div class="d-flex gap-3 mb-3"><div class="feature-ic"><i class="fa-solid fa-file-signature"></i></div><div><div class="fw-semibold">통관 · 내륙운송</div><div class="small-muted">수출입 통관 대행 및 Door-to-Door 운송</div></div></div>
+            <div class="d-flex gap-3"><div class="feature-ic"><i class="fa-solid fa-laptop-code"></i></div><div><div class="fw-semibold">IT / ERP 연동</div><div class="small-muted">SAP·Oracle ERP ↔ FMS 인터페이스 구축</div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ARCHITECTURE ===================== -->
+    <section id="arch" class="page">
+      <div class="breadcrumb-mini">Home / ERP ↔ FMS Architecture</div>
+      <h2 class="page-title">ERP ↔ FMS 연동 구조</h2>
+      <p class="page-sub">SAP ERP에서 발생한 문서를 인터페이스 레이어를 통해 FMS로 전송하고, 처리결과를 회신합니다.</p>
+
+      <div class="iface-stage mt-2">
+        <div class="grid-deco"></div>
+        <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap" style="position:relative;z-index:3">
+          <div class="node sap">
+            <div class="nic"><i class="fa-solid fa-database"></i></div>
+            <div class="nt">SAP ERP</div><div class="ns">고객사 · S/R · C/I · P/L</div>
+          </div>
+          <div class="wire">
+            <span class="packet run" style="animation-delay:0s">S/R</span>
+            <span class="packet run" style="animation-delay:.8s">C/I</span>
+            <span class="packet run" style="animation-delay:1.6s">P/L</span>
+            <span class="packet back run" style="animation-delay:.4s;top:130%">STATUS</span>
+            <span class="packet back run" style="animation-delay:1.2s;top:130%">B/L No</span>
+          </div>
+          <div class="node fms">
+            <div class="nic"><i class="fa-solid fa-server"></i></div>
+            <div class="nt">SUNJIN FMS</div><div class="ns">Order · B/L · 청구 · Tracking</div>
+          </div>
+        </div>
+        <div class="text-center mt-3" style="position:relative;z-index:3">
+          <span class="chip" style="background:rgba(255,255,255,.14);color:#cfe6ff">Interface Layer · REST / IDoc / EDI · 실시간 & 배치</span>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-header"><i class="fa-solid fa-arrow-right-arrow-left text-primary me-2"></i>인터페이스 실행 로그</div>
+            <div class="card-body">
+              <div class="d-flex gap-2 mb-2">
+                <button class="btn btn-sm btn-sap" onclick="runInterface()"><i class="fa-solid fa-play me-1"></i>인터페이스 실행</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('ifaceLog').innerHTML=''">로그 지우기</button>
+              </div>
+              <div class="iface-log" id="ifaceLog"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-header"><i class="fa-solid fa-list-check text-primary me-2"></i>연동 데이터 매핑</div>
+            <div class="card-body p-0 table-wrap">
+              <table class="table sap mb-0">
+                <thead><tr><th>SAP 문서</th><th>방향</th><th>FMS 처리</th><th>방식</th></tr></thead>
+                <tbody>
+                  <tr><td>S/R (선적요청)</td><td class="text-center text-primary"><i class="fa-solid fa-arrow-right"></i></td><td>Order 생성</td><td><span class="chip">REST</span></td></tr>
+                  <tr><td>C/I (상업송장)</td><td class="text-center text-primary"><i class="fa-solid fa-arrow-right"></i></td><td>Invoice 매칭</td><td><span class="chip">IDoc</span></td></tr>
+                  <tr><td>P/L (패킹리스트)</td><td class="text-center text-primary"><i class="fa-solid fa-arrow-right"></i></td><td>수량/CBM 검증</td><td><span class="chip">IDoc</span></td></tr>
+                  <tr><td>B/L No</td><td class="text-center text-success"><i class="fa-solid fa-arrow-left"></i></td><td>선적 확정 회신</td><td><span class="chip">REST</span></td></tr>
+                  <tr><td>청구내역</td><td class="text-center text-success"><i class="fa-solid fa-arrow-left"></i></td><td>AP 전표 연계</td><td><span class="chip">EDI</span></td></tr>
+                  <tr><td>Tracking</td><td class="text-center text-success"><i class="fa-solid fa-arrow-left"></i></td><td>상태 이벤트 회신</td><td><span class="chip">Webhook</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 국제물류 프로세스 ===================== -->
+    <section id="process" class="page">
+      <div class="breadcrumb-mini">Home / 국제물류 프로세스</div>
+      <h2 class="page-title">국제물류 프로세스</h2>
+      <p class="page-sub">ERP → FMS → 선사 → 세관 → 고객으로 이어지는 표준 수출입 흐름</p>
+
+      <div class="card p-4 mt-2">
+        <div class="flow" id="flowSteps">
+          <div class="flow-step"><div class="circle"><i class="fa-solid fa-database"></i></div><div class="ft">ERP 전송</div><div class="fd">S/R · C/I · P/L</div></div>
+          <div class="flow-step"><div class="circle"><i class="fa-solid fa-server"></i></div><div class="ft">FMS 오더</div><div class="fd">Order 생성 · 검증</div></div>
+          <div class="flow-step"><div class="circle"><i class="fa-solid fa-ship"></i></div><div class="ft">선사 부킹</div><div class="fd">Booking · B/L</div></div>
+          <div class="flow-step"><div class="circle"><i class="fa-solid fa-building-shield"></i></div><div class="ft">세관 통관</div><div class="fd">수출입 신고</div></div>
+          <div class="flow-step"><div class="circle"><i class="fa-solid fa-truck-fast"></i></div><div class="ft">고객 인도</div><div class="fd">Delivery · 정산</div></div>
+        </div>
+        <div class="text-center mt-3">
+          <button class="btn btn-outline-sap btn-sm" onclick="playFlow()"><i class="fa-solid fa-play me-1"></i>프로세스 애니메이션 재생</button>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <div class="card p-3 h-100"><h6 class="fw-bold"><i class="fa-solid fa-plane-departure text-primary me-2"></i>수출 프로세스</h6>
+          <p class="small-muted mb-0">S/R 접수 → 부킹 → Gate In → 선적(Vessel) → B/L 발행 → 출항 → 도착(ETA) → 정산. 각 단계 상태가 FMS로 회신되어 ERP에서도 조회됩니다.</p></div>
+        </div>
+        <div class="col-md-6">
+          <div class="card p-3 h-100"><h6 class="fw-bold"><i class="fa-solid fa-plane-arrival text-primary me-2"></i>수입 프로세스</h6>
+          <p class="small-muted mb-0">사전신고 → 입항(Arrival) → 하선 → 보세운송 → 통관(Customs) → 반출 → Delivery. 통관 상태와 D/O 발행 여부가 실시간 반영됩니다.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ERP 전송현황 ===================== -->
+    <section id="erpsend" class="page">
+      <div class="breadcrumb-mini">Home / ERP 전송현황</div>
+      <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+        <div><h2 class="page-title">ERP 전송현황 (S/R · C/I · P/L)</h2><p class="page-sub mb-0">SAP ERP → FMS 인터페이스 전송 내역</p></div>
+        <button class="btn btn-sap btn-sm" onclick="reloadWithLoading('erpsend')"><i class="fa-solid fa-arrows-rotate me-1"></i>새로고침</button>
+      </div>
+
+      <div class="row g-2 mt-2 mb-1" id="sendStatCards"></div>
+
+      <div class="card mt-1">
+        <div class="card-body">
+          <div class="toolbar">
+            <div class="input-group search"><span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass small-muted"></i></span>
+              <input class="form-control" id="srSearch" placeholder="문서번호·화주·항로 검색" oninput="renderSR()"></div>
+            <select class="form-select" style="max-width:160px" id="srType" onchange="renderSR()">
+              <option value="">문서유형: 전체</option><option>S/R</option><option>C/I</option><option>P/L</option>
+            </select>
+            <select class="form-select" style="max-width:170px" id="srStatus" onchange="renderSR()">
+              <option value="">상태: 전체</option><option>Success</option><option>Processing</option><option>Error</option>
+            </select>
+            <span class="chip ms-auto" id="srCount"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="table sap align-middle mb-0">
+              <thead><tr>
+                <th onclick="sortSR('docNo')">문서번호<i class="fa-solid fa-sort sorti"></i></th>
+                <th onclick="sortSR('type')">유형<i class="fa-solid fa-sort sorti"></i></th>
+                <th onclick="sortSR('date')">전송일시<i class="fa-solid fa-sort sorti"></i></th>
+                <th onclick="sortSR('shipper')">화주<i class="fa-solid fa-sort sorti"></i></th>
+                <th onclick="sortSR('route')">항로<i class="fa-solid fa-sort sorti"></i></th>
+                <th onclick="sortSR('status')">상태<i class="fa-solid fa-sort sorti"></i></th>
+                <th></th>
+              </tr></thead>
+              <tbody id="srBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 처리상태 Dashboard ===================== -->
+    <section id="status" class="page">
+      <div class="breadcrumb-mini">Home / 처리상태 Dashboard</div>
+      <h2 class="page-title">처리상태 Dashboard</h2>
+      <p class="page-sub">인터페이스 전송 처리 결과 요약</p>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-5">
+          <div class="card h-100"><div class="card-header">전송 상태 분포</div>
+            <div class="card-body"><canvas id="statusDonut" height="220"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="card h-100"><div class="card-header">최근 처리 결과</div>
+            <div class="card-body">
+              <div id="statBars"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-md-4"><div class="kpi"><i class="fa-solid fa-circle-check ic text-success"></i><div class="lbl">Success</div><div class="val text-success" id="cntSuccess">0</div><div class="delta up">정상 처리 완료</div></div></div>
+        <div class="col-md-4"><div class="kpi"><i class="fa-solid fa-spinner ic text-warning"></i><div class="lbl">Processing</div><div class="val text-warning" id="cntProc">0</div><div class="delta">처리 진행 중</div></div></div>
+        <div class="col-md-4"><div class="kpi"><i class="fa-solid fa-triangle-exclamation ic text-danger"></i><div class="lbl">Error</div><div class="val text-danger" id="cntErr">0</div><div class="delta down">재전송 필요</div></div></div>
+      </div>
+    </section>
+
+    <!-- ===================== Order 조회 ===================== -->
+    <section id="orders" class="page">
+      <div class="breadcrumb-mini">Home / Order 조회</div>
+      <h2 class="page-title">Order 조회</h2>
+      <p class="page-sub">FMS에서 생성된 포워딩 오더 목록</p>
+      <div class="card mt-2"><div class="card-body">
+        <div class="toolbar">
+          <div class="input-group search"><span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass small-muted"></i></span>
+            <input class="form-control" id="ordSearch" placeholder="오더번호·화주·항로 검색" oninput="renderOrders()"></div>
+          <select class="form-select" style="max-width:150px" id="ordMode" onchange="renderOrders()">
+            <option value="">Mode: 전체</option><option>FCL</option><option>LCL</option><option>AIR</option>
+          </select>
+          <span class="chip ms-auto" id="ordCount"></span>
+        </div>
+        <div class="table-wrap"><table class="table sap mb-0">
+          <thead><tr>
+            <th onclick="sortOrd('ordNo')">Order No<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortOrd('date')">생성일<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortOrd('shipper')">화주<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortOrd('route')">항로<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortOrd('mode')">Mode<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortOrd('cbm')" class="text-end">CBM<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortOrd('status')">상태<i class="fa-solid fa-sort sorti"></i></th>
+          </tr></thead>
+          <tbody id="ordBody"></tbody>
+        </table></div>
+      </div></div>
+    </section>
+
+    <!-- ===================== B/L 조회 ===================== -->
+    <section id="bl" class="page">
+      <div class="breadcrumb-mini">Home / B/L 조회</div>
+      <h2 class="page-title">B/L 조회</h2>
+      <p class="page-sub">House B/L · Master B/L 발행 내역</p>
+      <div class="card mt-2"><div class="card-body">
+        <div class="toolbar">
+          <div class="input-group search"><span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass small-muted"></i></span>
+            <input class="form-control" id="blSearch" placeholder="B/L·선명·항로 검색" oninput="renderBL()"></div>
+          <select class="form-select" style="max-width:160px" id="blType" onchange="renderBL()">
+            <option value="">유형: 전체</option><option>House</option><option>Master</option>
+          </select>
+          <select class="form-select" style="max-width:170px" id="blCarrier" onchange="renderBL()"><option value="">선사: 전체</option></select>
+          <span class="chip ms-auto" id="blCount"></span>
+        </div>
+        <div class="table-wrap"><table class="table sap mb-0">
+          <thead><tr>
+            <th onclick="sortBL('blNo')">B/L No<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortBL('type')">유형<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortBL('carrier')">선사<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortBL('vessel')">선명 / 항차<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortBL('route')">POL → POD<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortBL('etd')">ETD / ETA<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortBL('status')">상태<i class="fa-solid fa-sort sorti"></i></th>
+          </tr></thead>
+          <tbody id="blBody"></tbody>
+        </table></div>
+      </div></div>
+    </section>
+
+    <!-- ===================== Invoice 조회 ===================== -->
+    <section id="invoice" class="page">
+      <div class="breadcrumb-mini">Home / Invoice 조회</div>
+      <h2 class="page-title">Invoice 조회 (청구내역)</h2>
+      <p class="page-sub">운임 및 부대비용 청구 내역</p>
+      <div class="card mt-2"><div class="card-body">
+        <div class="toolbar">
+          <div class="input-group search"><span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass small-muted"></i></span>
+            <input class="form-control" id="invSearch" placeholder="Invoice·고객·B/L 검색" oninput="renderInv()"></div>
+          <select class="form-select" style="max-width:170px" id="invStatus" onchange="renderInv()">
+            <option value="">결제상태: 전체</option><option>Paid</option><option>Unpaid</option><option>Overdue</option>
+          </select>
+          <span class="chip ms-auto" id="invCount"></span>
+        </div>
+        <div class="table-wrap"><table class="table sap mb-0">
+          <thead><tr>
+            <th onclick="sortInv('invNo')">Invoice No<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortInv('date')">발행일<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortInv('customer')">고객<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortInv('blNo')">B/L No<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortInv('total')" class="text-end">청구금액<i class="fa-solid fa-sort sorti"></i></th>
+            <th onclick="sortInv('status')">결제상태<i class="fa-solid fa-sort sorti"></i></th>
+          </tr></thead>
+          <tbody id="invBody"></tbody>
+        </table></div>
+      </div></div>
+    </section>
+
+    <!-- ===================== Cargo Tracking ===================== -->
+    <section id="tracking" class="page">
+      <div class="breadcrumb-mini">Home / Cargo Tracking</div>
+      <h2 class="page-title">Cargo Tracking</h2>
+      <p class="page-sub">B/L 기준 화물 진행현황 추적</p>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-5">
+          <div class="card"><div class="card-header">추적 대상 선택</div>
+            <div class="card-body">
+              <div class="input-group mb-3"><span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass small-muted"></i></span>
+                <input class="form-control" id="trkSearch" placeholder="B/L·선명 검색" oninput="renderTrkList()"></div>
+              <div id="trkList" style="max-height:420px;overflow:auto"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="card"><div class="card-header"><i class="fa-solid fa-route text-primary me-2"></i>진행 Timeline</div>
+            <div class="card-body" id="trkDetail"><div class="text-center small-muted py-5"><i class="fa-solid fa-hand-pointer mb-2 fa-2x d-block"></i>좌측에서 화물을 선택하세요.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 수출 진행 ===================== -->
+    <section id="export" class="page">
+      <div class="breadcrumb-mini">Home / 수출 진행</div>
+      <h2 class="page-title">수출 화물이행 정보</h2>
+      <p class="page-sub">Booking → Gate In → Vessel → 출항 → ETA</p>
+      <div class="card mt-2"><div class="card-body">
+        <div class="toolbar"><div class="input-group search"><span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass small-muted"></i></span>
+          <input class="form-control" id="expSearch" placeholder="B/L·선명 검색" oninput="renderExport()"></div><span class="chip ms-auto" id="expCount"></span></div>
+        <div id="expList"></div>
+      </div></div>
+    </section>
+
+    <!-- ===================== 수입 진행 ===================== -->
+    <section id="import" class="page">
+      <div class="breadcrumb-mini">Home / 수입 진행</div>
+      <h2 class="page-title">수입 화물진행 정보</h2>
+      <p class="page-sub">Arrival → 하선 → Customs → 반출 → Delivery</p>
+      <div class="card mt-2"><div class="card-body">
+        <div class="toolbar"><div class="input-group search"><span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass small-muted"></i></span>
+          <input class="form-control" id="impSearch" placeholder="B/L·선명 검색" oninput="renderImport()"></div><span class="chip ms-auto" id="impCount"></span></div>
+        <div id="impList"></div>
+      </div></div>
+    </section>
+
+    <!-- ===================== Document Viewer ===================== -->
+    <section id="docs" class="page">
+      <div class="breadcrumb-mini">Home / Document Viewer</div>
+      <h2 class="page-title">Document Viewer</h2>
+      <p class="page-sub">C/I · P/L · B/L · Invoice 미리보기</p>
+      <div class="row g-2 mt-1 mb-2">
+        <div class="col-auto"><select class="form-select" id="docType" style="max-width:220px" onchange="fillDocSelect()">
+          <option value="ci">Commercial Invoice</option><option value="pl">Packing List</option>
+          <option value="bl">Bill of Lading</option><option value="inv">Freight Invoice</option>
+        </select></div>
+        <div class="col-auto"><select class="form-select" id="docPick" style="min-width:220px" onchange="renderDoc()"></select></div>
+      </div>
+      <div id="docView"></div>
+    </section>
+
+    <!-- ===================== CBM Calculator ===================== -->
+    <section id="cbm" class="page">
+      <div class="breadcrumb-mini">Home / CBM Calculator</div>
+      <h2 class="page-title">CBM / Volume Calculator</h2>
+      <p class="page-sub">화물 부피(CBM) 및 부피중량·용적률 계산</p>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-5">
+          <div class="card p-3">
+            <div class="row g-2">
+              <div class="col-4"><label class="form-label small mb-1">길이 (cm)</label><input type="number" class="form-control" id="cbmL" value="120" oninput="calcCBM()"></div>
+              <div class="col-4"><label class="form-label small mb-1">너비 (cm)</label><input type="number" class="form-control" id="cbmW" value="100" oninput="calcCBM()"></div>
+              <div class="col-4"><label class="form-label small mb-1">높이 (cm)</label><input type="number" class="form-control" id="cbmH" value="90" oninput="calcCBM()"></div>
+              <div class="col-6"><label class="form-label small mb-1">수량 (Box)</label><input type="number" class="form-control" id="cbmQ" value="10" oninput="calcCBM()"></div>
+              <div class="col-6"><label class="form-label small mb-1">실중량 (kg/box)</label><input type="number" class="form-control" id="cbmKg" value="85" oninput="calcCBM()"></div>
+              <div class="col-12 mt-2"><label class="form-label small mb-1">운송모드</label>
+                <select class="form-select" id="cbmMode" onchange="calcCBM()"><option value="sea">해상 (LCL)</option><option value="air">항공</option></select></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="row g-3">
+            <div class="col-sm-6"><div class="kpi"><div class="lbl">총 CBM</div><div class="val text-primary" id="rCBM">-</div><div class="delta small-muted">m³</div></div></div>
+            <div class="col-sm-6"><div class="kpi"><div class="lbl">총 실중량</div><div class="val" id="rGW">-</div><div class="delta small-muted">kg</div></div></div>
+            <div class="col-sm-6"><div class="kpi"><div class="lbl">부피중량</div><div class="val" id="rVW">-</div><div class="delta small-muted" id="rVWnote">kg</div></div></div>
+            <div class="col-sm-6"><div class="kpi"><i class="fa-solid fa-weight-hanging ic text-primary"></i><div class="lbl">Chargeable Weight</div><div class="val text-primary" id="rCW">-</div><div class="delta small-muted" id="rCWnote"></div></div></div>
+          </div>
+          <div class="card p-3 mt-3">
+            <div class="small-muted mb-1">참고 · 컨테이너 적재 기준 (CBM 대비)</div>
+            <div id="cbmHint"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Freight Calculator ===================== -->
+    <section id="freight" class="page">
+      <div class="breadcrumb-mini">Home / Freight Calculator</div>
+      <h2 class="page-title">Freight Charge Calculator</h2>
+      <p class="page-sub">항로·모드 기준 예상 운임 (Mock 요율)</p>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-5"><div class="card p-3">
+          <label class="form-label small mb-1">항로</label>
+          <select class="form-select mb-2" id="frRoute"></select>
+          <label class="form-label small mb-1">운송모드</label>
+          <select class="form-select mb-2" id="frMode" onchange="frToggle()">
+            <option value="FCL">해상 FCL</option><option value="LCL">해상 LCL</option><option value="AIR">항공</option>
+          </select>
+          <div id="frFcl">
+            <label class="form-label small mb-1">컨테이너</label>
+            <select class="form-select mb-2" id="frCntr"><option value="20">20ft DRY</option><option value="40">40ft DRY</option><option value="40HC">40ft HC</option></select>
+            <label class="form-label small mb-1">수량</label><input type="number" class="form-control" id="frQty" value="1">
+          </div>
+          <div id="frLcl" class="d-none">
+            <label class="form-label small mb-1">CBM</label><input type="number" class="form-control mb-2" id="frCbm" value="12">
+            <label class="form-label small mb-1">Weight (kg)</label><input type="number" class="form-control" id="frWt" value="4200">
+          </div>
+          <button class="btn btn-sap w-100 mt-3" onclick="calcFreight()"><i class="fa-solid fa-calculator me-1"></i>운임 계산</button>
+        </div></div>
+        <div class="col-lg-7"><div class="card"><div class="card-header">예상 운임 명세</div>
+          <div class="card-body"><div id="frResult" class="text-center small-muted py-5"><i class="fa-solid fa-file-invoice-dollar fa-2x d-block mb-2"></i>조건을 입력하고 운임을 계산하세요.</div></div>
+        </div></div>
+      </div>
+    </section>
+
+    <!-- ===================== Transit Time ===================== -->
+    <section id="transit" class="page">
+      <div class="breadcrumb-mini">Home / Transit Time</div>
+      <h2 class="page-title">Transit Time · 항차 조회</h2>
+      <p class="page-sub">POL → POD 예상 운송기간 (Mock 스케줄)</p>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-4"><div class="card p-3">
+          <label class="form-label small mb-1">출발항 (POL)</label><select class="form-select mb-2" id="ttPol"></select>
+          <label class="form-label small mb-1">도착항 (POD)</label><select class="form-select mb-2" id="ttPod"></select>
+          <button class="btn btn-sap w-100 mt-2" onclick="calcTransit()"><i class="fa-solid fa-magnifying-glass me-1"></i>스케줄 조회</button>
+        </div></div>
+        <div class="col-lg-8"><div class="card"><div class="card-header">운항 스케줄</div>
+          <div class="card-body" id="ttResult"><div class="text-center small-muted py-5"><i class="fa-solid fa-ship fa-2x d-block mb-2"></i>항로를 선택하고 조회하세요.</div></div>
+        </div></div>
+      </div>
+    </section>
+
+    <!-- ===================== Dashboard (KPI) ===================== -->
+    <section id="dashboard" class="page">
+      <div class="breadcrumb-mini">Home / Dashboard</div>
+      <h2 class="page-title">Executive Dashboard</h2>
+      <p class="page-sub">물류 KPI 및 성과 지표</p>
+      <div class="row g-3 mt-1">
+        <div class="col-6 col-lg-3"><div class="kpi"><i class="fa-solid fa-boxes-stacked ic text-primary"></i><div class="lbl">총 선적</div><div class="val" id="kpiShip">0</div><div class="delta up"><i class="fa-solid fa-arrow-up"></i> 12.4% MoM</div></div></div>
+        <div class="col-6 col-lg-3"><div class="kpi"><i class="fa-solid fa-file-invoice ic text-primary"></i><div class="lbl">청구금액(USD)</div><div class="val" id="kpiRev">0</div><div class="delta up"><i class="fa-solid fa-arrow-up"></i> 8.1% MoM</div></div></div>
+        <div class="col-6 col-lg-3"><div class="kpi"><i class="fa-solid fa-clock ic text-primary"></i><div class="lbl">평균 T/T</div><div class="val" id="kpiTT">0</div><div class="delta down"><i class="fa-solid fa-arrow-down"></i> 1.3일 단축</div></div></div>
+        <div class="col-6 col-lg-3"><div class="kpi"><i class="fa-solid fa-plug-circle-check ic text-primary"></i><div class="lbl">I/F 성공률</div><div class="val text-success">99.4%</div><div class="delta up">SLA 충족</div></div></div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-7"><div class="card h-100"><div class="card-header">월별 선적 물동량</div><div class="card-body"><canvas id="chMonthly" height="150"></canvas></div></div></div>
+        <div class="col-lg-5"><div class="card h-100"><div class="card-header">운송모드 비중</div><div class="card-body"><canvas id="chMode" height="150"></canvas></div></div></div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-7"><div class="card h-100"><div class="card-header">Top 항로 (선적 건수)</div><div class="card-body"><canvas id="chRoute" height="160"></canvas></div></div></div>
+        <div class="col-lg-5"><div class="card h-100"><div class="card-header">청구 결제 상태</div><div class="card-body"><canvas id="chPay" height="160"></canvas></div></div></div>
+      </div>
+    </section>
+
+    <!-- ===================== FAQ ===================== -->
+    <section id="faq" class="page">
+      <div class="breadcrumb-mini">Home / FAQ</div>
+      <h2 class="page-title">ERP Interface FAQ</h2>
+      <p class="page-sub">연동 도입 시 자주 묻는 질문</p>
+      <div class="accordion mt-2" id="faqAcc"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===== Loading overlay ===== -->
+<div id="loading"><div class="spin"></div><div class="small-muted fw-semibold" id="loadTxt">데이터를 불러오는 중…</div></div>
+
+<!-- ===== Toast container ===== -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+<!-- ===== Detail Modal ===== -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="mTitle">Detail</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body" id="mBody"></div>
+      <div class="modal-footer"><button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
+        <button class="btn btn-sap btn-sm" onclick="toast('내보내기','문서가 PDF로 출력되었습니다. (데모)','success')"><i class="fa-solid fa-download me-1"></i>PDF 출력</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* =========================================================
+   MOCK DATA GENERATION
+   ========================================================= */
+const CARRIERS=['HMM','MSC','MAERSK','ONE','CMA CGM','OOCL','COSCO','EVERGREEN','YANG MING','ZIM'];
+const VESSELS=['HMM ALGECIRAS','MSC GULSUN','MAERSK EDINBURGH','ONE APUS','CMA CGM MARCO POLO','OOCL HONG KONG','COSCO SHIPPING UNIVERSE','EVER GIVEN','YM WORLD','ZIM KINGSTON'];
+const PORTS=[
+  {c:'KRPUS',n:'Busan'},{c:'KRINC',n:'Incheon'},{c:'KRPTK',n:'Pyeongtaek'},
+  {c:'USLAX',n:'Los Angeles'},{c:'USNYC',n:'New York'},{c:'NLRTM',n:'Rotterdam'},
+  {c:'DEHAM',n:'Hamburg'},{c:'CNSHA',n:'Shanghai'},{c:'JPTYO',n:'Tokyo'},
+  {c:'SGSIN',n:'Singapore'},{c:'VNHPH',n:'Haiphong'},{c:'INNSA',n:'Nhava Sheva'},
+  {c:'AEJEA',n:'Jebel Ali'},{c:'HKHKG',n:'Hong Kong'}
+];
+const COMMODITIES=['Auto Parts','Electronics','Textile Goods','Machinery','Chemicals','Furniture','Cosmetics','Food Products','Steel Coil','Plastic Resin','LED Modules','Rubber Tire'];
+const SHIPPERS=['HANKOOK TRADING','DAEHAN ELEC','SAMWOO CHEM','KORINDO IND','SEJIN MACHINERY','NARA COSMETIC','TAEYANG STEEL','ORIENT FOODS','JINYANG PARTS','MIRAE TECH','KOSPO INTL','DONGBANG CORP'];
+const CONSIGNEES=['PACIFIC IMPORT LLC','EURO DISTRIB GmbH','ASIA LINK PTE','GLOBAL BUYERS INC','NOVA TRADE CO','SUNRISE IMPORTS','METRO SUPPLY','ATLANTIC CORP','ORION GLOBAL','VERTEX IMPORT'];
+const MODES=['FCL','LCL','AIR'];
+const CNTRS=['20ft DRY','40ft DRY','40ft HC','20ft RF','40ft OT'];
+const INCOTERMS=['FOB','CIF','CFR','EXW','DAP','FCA'];
+
+// seeded pseudo-random for stable data
+let _seed=20260714;
+function rnd(){_seed=(_seed*1103515245+12345)&0x7fffffff;return _seed/0x7fffffff;}
+function pick(a){return a[Math.floor(rnd()*a.length)];}
+function ri(min,max){return Math.floor(rnd()*(max-min+1))+min;}
+function pad(n,l){return String(n).padStart(l,'0');}
+function dateStr(off){const d=new Date(2026,3,1);d.setDate(d.getDate()+off);return d.toISOString().slice(0,10);}
+function dateTimeStr(off){const d=new Date(2026,3,1,8,0);d.setDate(d.getDate()+off);d.setHours(8+ri(0,9),ri(0,59));return d.toISOString().slice(0,16).replace('T',' ');}
+function routeOf(polIdx,podIdx){return `${PORTS[polIdx].c} → ${PORTS[podIdx].c}`;}
+
+const SR=[], CI=[], PL=[], BL=[], INV=[], TRK=[], ORD=[];
+const STATUS3=['Success','Success','Success','Success','Processing','Error']; // weighted
+
+for(let i=0;i<30;i++){
+  const polIdx=ri(0,2), podIdx=ri(3,13);
+  const type=pick(['S/R','S/R','C/I','P/L']);
+  const shipper=pick(SHIPPERS), consignee=pick(CONSIGNEES);
+  const mode=pick(MODES), cbm=+(rnd()*55+3).toFixed(1), wt=ri(400,26000);
+  const st=pick(STATUS3);
+  SR.push({
+    docNo:`${type.replace('/','')}-26${pad(1000+i,4)}`, type, date:dateTimeStr(i),
+    shipper, consignee, polIdx, podIdx, route:routeOf(polIdx,podIdx),
+    commodity:pick(COMMODITIES), mode, cbm, wt, qty:ri(1,240),
+    status:st, erp:`45${pad(1000+i,6)}`
+  });
+}
+for(let i=0;i<20;i++){
+  const s=SR[i%30];
+  CI.push({
+    ciNo:`CI-26${pad(2000+i,4)}`, srNo:s.docNo, date:dateStr(i),
+    seller:s.shipper, buyer:s.consignee, incoterms:pick(INCOTERMS),
+    currency:'USD', amount:ri(8000,240000),
+    items:Array.from({length:ri(2,4)},()=>({d:pick(COMMODITIES),q:ri(50,800),up:+(rnd()*90+5).toFixed(2)}))
+  });
+}
+for(let i=0;i<20;i++){
+  const s=SR[i%30];
+  PL.push({
+    plNo:`PL-26${pad(3000+i,4)}`, srNo:s.docNo, date:dateStr(i),
+    packages:ri(10,320), net:ri(300,18000), gross:ri(400,22000), cbm:+(rnd()*50+4).toFixed(2), commodity:s.commodity
+  });
+}
+const BLSTAT=['In Transit','In Transit','Delivered','On Hold','Booked'];
+for(let i=0;i<30;i++){
+  const polIdx=ri(0,2), podIdx=ri(3,13);
+  const ci=ri(0,9), etd=dateStr(i-6), eta=dateStr(i-6+ri(9,32));
+  BL.push({
+    blNo:`SJLB26${pad(50000+i*7,6)}`, type:pick(['House','House','Master']),
+    carrier:CARRIERS[ci], vessel:VESSELS[ci], voyage:`${ri(1,39)}${pick(['E','W','N','S'])}`,
+    polIdx, podIdx, route:`${PORTS[polIdx].c} → ${PORTS[podIdx].c}`,
+    etd, eta, mode:pick(MODES), cntr:pick(CNTRS),
+    shipper:pick(SHIPPERS), consignee:pick(CONSIGNEES),
+    status:pick(BLSTAT)
+  });
+}
+const PAY=['Paid','Paid','Unpaid','Overdue'];
+for(let i=0;i<20;i++){
+  const b=BL[i%30];
+  const oc=ri(700,4200), thc=ri(120,320), doc=ri(30,60), cfs=ri(80,260), other=ri(50,400);
+  INV.push({
+    invNo:`INV-26${pad(4000+i,4)}`, date:dateStr(i+2), customer:b.shipper,
+    blNo:b.blNo, oc, thc, doc, cfs, other,
+    total:oc+thc+doc+cfs+other, currency:'USD', status:pick(PAY)
+  });
+}
+// Tracking (20) with milestone timelines
+const EXP_STEPS=['S/R 접수','Booking 확정','Gate In (CY 반입)','선적 완료 (Loaded)','출항 (Departed)','환적 (T/S)','입항 (Arrived)','양하 완료'];
+const IMP_STEPS=['출항 (Origin)','입항 (Arrival)','하선 완료','보세운송','수입신고','통관 완료','반출','Delivery 완료'];
+for(let i=0;i<20;i++){
+  const b=BL[i%30];
+  const dir=pick(['Export','Export','Import']);
+  const steps=dir==='Export'?EXP_STEPS:IMP_STEPS;
+  const cur=ri(1,steps.length-1);
+  const ms=steps.map((s,idx)=>({name:s, done:idx<cur, current:idx===cur, time:idx<=cur?dateTimeStr(i+idx-4):''}));
+  TRK.push({
+    trackNo:`TRK-26${pad(5000+i,4)}`, blNo:b.blNo, dir, mode:b.mode,
+    carrier:b.carrier, vessel:b.vessel, route:b.route,
+    polIdx:b.polIdx, podIdx:b.podIdx, eta:b.eta,
+    status:cur===steps.length-1?'Delivered':(pick(['In Transit','In Transit','On Hold'])),
+    steps:ms, curIdx:cur
+  });
+}
+// Orders derived from SR
+SR.forEach((s,i)=>{ORD.push({
+  ordNo:`ORD-26${pad(6000+i,4)}`, date:s.date.slice(0,10), shipper:s.shipper,
+  route:s.route, mode:s.mode, cbm:s.cbm, commodity:s.commodity,
+  status:s.status==='Error'?'Hold':(s.status==='Processing'?'Open':'Confirmed')
+});});
+
+/* =========================================================
+   NAV / ROUTING
+   ========================================================= */
+const NAV=[
+  {grp:'개요',items:[
+    {id:'home',ic:'fa-house',t:'Home'},
+    {id:'company',ic:'fa-building',t:'회사소개'},
+    {id:'arch',ic:'fa-diagram-project',t:'ERP ↔ FMS 구조'},
+    {id:'process',ic:'fa-timeline',t:'국제물류 프로세스'},
+  ]},
+  {grp:'인터페이스',items:[
+    {id:'erpsend',ic:'fa-right-left',t:'ERP 전송현황'},
+    {id:'status',ic:'fa-gauge-high',t:'처리상태 Dashboard'},
+  ]},
+  {grp:'조회',items:[
+    {id:'orders',ic:'fa-clipboard-list',t:'Order 조회'},
+    {id:'bl',ic:'fa-file-lines',t:'B/L 조회'},
+    {id:'invoice',ic:'fa-file-invoice-dollar',t:'Invoice 조회'},
+    {id:'docs',ic:'fa-file-magnifying-glass',t:'Document Viewer'},
+  ]},
+  {grp:'화물 진행',items:[
+    {id:'tracking',ic:'fa-route',t:'Cargo Tracking'},
+    {id:'export',ic:'fa-plane-departure',t:'수출 진행'},
+    {id:'import',ic:'fa-plane-arrival',t:'수입 진행'},
+  ]},
+  {grp:'도구',items:[
+    {id:'cbm',ic:'fa-cube',t:'CBM Calculator'},
+    {id:'freight',ic:'fa-calculator',t:'Freight Calculator'},
+    {id:'transit',ic:'fa-clock',t:'Transit Time'},
+  ]},
+  {grp:'분석',items:[
+    {id:'dashboard',ic:'fa-chart-line',t:'Dashboard'},
+    {id:'faq',ic:'fa-circle-question',t:'FAQ'},
+  ]},
+];
+function buildNav(el){
+  let h='';
+  NAV.forEach(g=>{
+    h+=`<div class="grp">${g.grp}</div>`;
+    g.items.forEach(it=>h+=`<a class="navlink" data-id="${it.id}" onclick="go('${it.id}')"><i class="fa-solid ${it.ic}"></i>${it.t}</a>`);
+  });
+  el.innerHTML=h;
+}
+buildNav(document.getElementById('deskNav'));
+buildNav(document.getElementById('mobNav'));
+
+let firstRenderDone={};
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.navlink').forEach(n=>n.classList.toggle('active',n.dataset.id===id));
+  window.scrollTo({top:0,behavior:'smooth'});
+  const off=bootstrap.Offcanvas.getInstance(document.getElementById('mSide')); if(off) off.hide();
+  lazyRender(id);
+}
+function lazyRender(id){
+  if(firstRenderDone[id]) { if(id==='arch') restartPackets(); return; }
+  firstRenderDone[id]=true;
+  switch(id){
+    case 'erpsend': renderSendStats(); renderSR(); break;
+    case 'status': renderStatus(); break;
+    case 'orders': renderOrders(); break;
+    case 'bl': fillCarrierFilter(); renderBL(); break;
+    case 'invoice': renderInv(); break;
+    case 'tracking': renderTrkList(); break;
+    case 'export': renderExport(); break;
+    case 'import': renderImport(); break;
+    case 'docs': fillDocSelect(); break;
+    case 'cbm': calcCBM(); break;
+    case 'freight': fillFreightRoutes(); frToggle(); break;
+    case 'transit': fillTransitPorts(); break;
+    case 'dashboard': renderDashboard(); break;
+    case 'faq': renderFAQ(); break;
+    case 'arch': restartPackets(); break;
+  }
+}
+
+/* =========================================================
+   UI HELPERS: Toast / Loading / Modal
+   ========================================================= */
+function toast(title,msg,type='info'){
+  const map={success:['fa-circle-check','text-success'],error:['fa-circle-xmark','text-danger'],info:['fa-circle-info','text-primary'],warn:['fa-triangle-exclamation','text-warning']};
+  const m=map[type]||map.info;
+  const el=document.createElement('div');
+  el.className='toast align-items-center border-0 shadow';
+  el.setAttribute('role','alert');
+  el.innerHTML=`<div class="d-flex"><div class="toast-body"><i class="fa-solid ${m[0]} ${m[1]} me-2"></i><strong>${title}</strong><div class="small-muted mt-1">${msg}</div></div>
+    <button class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+  document.querySelector('.toast-container').appendChild(el);
+  const t=new bootstrap.Toast(el,{delay:3200}); t.show();
+  el.addEventListener('hidden.bs.toast',()=>el.remove());
+}
+function loading(txt='데이터를 불러오는 중…'){document.getElementById('loadTxt').textContent=txt;document.getElementById('loading').classList.add('show');}
+function loadingOff(){document.getElementById('loading').classList.remove('show');}
+function reloadWithLoading(id){loading();setTimeout(()=>{loadingOff();lazyRenderForce(id);toast('새로고침','최신 인터페이스 데이터를 불러왔습니다.','success');},700);}
+function lazyRenderForce(id){firstRenderDone[id]=false;lazyRender(id);}
+
+function openModal(title,body){
+  document.getElementById('mTitle').innerHTML=title;
+  document.getElementById('mBody').innerHTML=body;
+  new bootstrap.Modal(document.getElementById('detailModal')).show();
+}
+function pill(status){
+  const m={
+    'Success':'st-success','Processing':'st-processing','Error':'st-error',
+    'Paid':'st-paid','Unpaid':'st-unpaid','Overdue':'st-overdue',
+    'In Transit':'st-intransit','Delivered':'st-delivered','On Hold':'st-hold','Booked':'st-processing',
+    'Confirmed':'st-success','Open':'st-processing','Hold':'st-error'
+  };
+  const ic={'Success':'fa-check','Processing':'fa-spinner','Error':'fa-xmark','Paid':'fa-check','Unpaid':'fa-minus','Overdue':'fa-exclamation','In Transit':'fa-truck','Delivered':'fa-flag-checkered','On Hold':'fa-pause','Booked':'fa-bookmark','Confirmed':'fa-check','Open':'fa-folder-open','Hold':'fa-pause'};
+  return `<span class="status-pill ${m[status]||'st-unpaid'}"><i class="fa-solid ${ic[status]||'fa-circle'}"></i>${status}</span>`;
+}
+const num=n=>Number(n).toLocaleString();
+
+/* =========================================================
+   SORT UTIL
+   ========================================================= */
+function makeSorter(state){
+  return function(arr,key){
+    const dir=(state.key===key&&state.dir==='asc')?'desc':'asc';
+    state.key=key;state.dir=dir;
+    arr.sort((a,b)=>{let x=a[key],y=b[key];
+      if(typeof x==='number'){return dir==='asc'?x-y:y-x;}
+      x=String(x);y=String(y);return dir==='asc'?x.localeCompare(y):y.localeCompare(x);});
+  };
+}
+
+/* ---------- ERP 전송현황 ---------- */
+let srState={key:'',dir:''}; const srSort=makeSorter(srState);
+function renderSendStats(){
+  const s=SR.filter(x=>x.status==='Success').length,p=SR.filter(x=>x.status==='Processing').length,e=SR.filter(x=>x.status==='Error').length;
+  document.getElementById('sendStatCards').innerHTML=`
+    <div class="col-6 col-md-3"><div class="kpi"><div class="lbl">전체 전송</div><div class="val">${SR.length}</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi"><div class="lbl">Success</div><div class="val text-success">${s}</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi"><div class="lbl">Processing</div><div class="val text-warning">${p}</div></div></div>
+    <div class="col-6 col-md-3"><div class="kpi"><div class="lbl">Error</div><div class="val text-danger">${e}</div></div></div>`;
+}
+function getSRFiltered(){
+  const q=(document.getElementById('srSearch').value||'').toLowerCase();
+  const ty=document.getElementById('srType').value, st=document.getElementById('srStatus').value;
+  return SR.filter(r=>{
+    const t=`${r.docNo} ${r.shipper} ${r.route} ${r.consignee}`.toLowerCase();
+    return (!q||t.includes(q))&&(!ty||r.type===ty)&&(!st||r.status===st);
+  });
+}
+function sortSR(k){srSort(SR,k);renderSR();}
+function renderSR(){
+  const rows=getSRFiltered();
+  document.getElementById('srCount').textContent=`${rows.length} 건`;
+  document.getElementById('srBody').innerHTML=rows.map(r=>`
+    <tr onclick='srDetail("${r.docNo}")'>
+      <td class="mono fw-semibold text-primary">${r.docNo}</td>
+      <td><span class="chip">${r.type}</span></td>
+      <td class="mono small-muted">${r.date}</td>
+      <td>${r.shipper}</td>
+      <td class="mono">${r.route}</td>
+      <td>${pill(r.status)}</td>
+      <td class="text-end"><i class="fa-solid fa-chevron-right small-muted"></i></td>
+    </tr>`).join('')||`<tr><td colspan="7" class="text-center small-muted py-4">검색 결과가 없습니다.</td></tr>`;
+}
+function srDetail(no){
+  const r=SR.find(x=>x.docNo===no);
+  openModal(`<i class="fa-solid fa-right-left text-primary me-2"></i>${r.docNo} <span class="chip ms-2">${r.type}</span>`,`
+    <div class="row g-3">
+      <div class="col-md-6"><div class="small-muted">화주 (Shipper)</div><div class="fw-semibold">${r.shipper}</div></div>
+      <div class="col-md-6"><div class="small-muted">수하인 (Consignee)</div><div class="fw-semibold">${r.consignee}</div></div>
+      <div class="col-md-6"><div class="small-muted">항로</div><div class="fw-semibold mono">${r.route}</div></div>
+      <div class="col-md-6"><div class="small-muted">품목</div><div class="fw-semibold">${r.commodity}</div></div>
+      <div class="col-md-3"><div class="small-muted">Mode</div><div class="fw-semibold">${r.mode}</div></div>
+      <div class="col-md-3"><div class="small-muted">CBM</div><div class="fw-semibold">${r.cbm}</div></div>
+      <div class="col-md-3"><div class="small-muted">중량(kg)</div><div class="fw-semibold">${num(r.wt)}</div></div>
+      <div class="col-md-3"><div class="small-muted">수량</div><div class="fw-semibold">${r.qty}</div></div>
+    </div>
+    <hr>
+    <div class="d-flex justify-content-between align-items-center">
+      <div><div class="small-muted">SAP ERP 문서번호</div><div class="mono fw-semibold">${r.erp}</div></div>
+      <div class="text-end"><div class="small-muted">처리상태</div>${pill(r.status)}</div>
+    </div>
+    <div class="mt-3 p-3 rounded" style="background:#f2f6fb">
+      <div class="small-muted mb-1">인터페이스 이력</div>
+      <div class="small mono">[${r.date}] SAP → FMS · ${r.type} 수신<br>[${r.date}] 매핑/검증 완료 · ${r.status}</div>
+    </div>`);
+}
+
+/* ---------- 처리상태 Dashboard ---------- */
+let statusDonutChart=null;
+function renderStatus(){
+  const s=SR.filter(x=>x.status==='Success').length,p=SR.filter(x=>x.status==='Processing').length,e=SR.filter(x=>x.status==='Error').length;
+  document.getElementById('cntSuccess').textContent=s;
+  document.getElementById('cntProc').textContent=p;
+  document.getElementById('cntErr').textContent=e;
+  // animated bars
+  const recent=SR.slice(0,7);
+  document.getElementById('statBars').innerHTML=recent.map(r=>{
+    const pct=r.status==='Success'?100:(r.status==='Processing'?ri(35,75):ri(10,40));
+    const col=r.status==='Success'?'bg-success':(r.status==='Processing'?'bg-warning':'bg-danger');
+    return `<div class="mb-3"><div class="d-flex justify-content-between mb-1"><span class="mono small fw-semibold">${r.docNo}</span>${pill(r.status)}</div>
+      <div class="progress"><div class="progress-bar ${col}" style="width:0%" data-w="${pct}"></div></div></div>`;
+  }).join('');
+  setTimeout(()=>document.querySelectorAll('#statBars .progress-bar').forEach(b=>b.style.width=b.dataset.w+'%'),100);
+  if(statusDonutChart)statusDonutChart.destroy();
+  statusDonutChart=new Chart(document.getElementById('statusDonut'),{
+    type:'doughnut',
+    data:{labels:['Success','Processing','Error'],datasets:[{data:[s,p,e],backgroundColor:['#107e3e','#e9730c','#bb0000'],borderWidth:0}]},
+    options:{plugins:{legend:{position:'bottom'}},cutout:'62%'}
+  });
+}
+
+/* ---------- Orders ---------- */
+let ordState={key:'',dir:''}; const ordSort=makeSorter(ordState);
+function getOrd(){const q=(document.getElementById('ordSearch').value||'').toLowerCase();const md=document.getElementById('ordMode').value;
+  return ORD.filter(o=>(`${o.ordNo} ${o.shipper} ${o.route}`.toLowerCase().includes(q))&&(!md||o.mode===md));}
+function sortOrd(k){ordSort(ORD,k);renderOrders();}
+function renderOrders(){const rows=getOrd();document.getElementById('ordCount').textContent=`${rows.length} 건`;
+  document.getElementById('ordBody').innerHTML=rows.map(o=>`
+    <tr onclick='ordDetail("${o.ordNo}")'>
+      <td class="mono fw-semibold text-primary">${o.ordNo}</td><td class="mono small-muted">${o.date}</td>
+      <td>${o.shipper}</td><td class="mono">${o.route}</td><td><span class="chip">${o.mode}</span></td>
+      <td class="text-end mono">${o.cbm}</td><td>${pill(o.status)}</td>
+    </tr>`).join('')||`<tr><td colspan="7" class="text-center small-muted py-4">결과 없음</td></tr>`;}
+function ordDetail(no){const o=ORD.find(x=>x.ordNo===no);
+  openModal(`<i class="fa-solid fa-clipboard-list text-primary me-2"></i>${o.ordNo}`,`
+    <div class="row g-3">
+      <div class="col-md-6"><div class="small-muted">화주</div><div class="fw-semibold">${o.shipper}</div></div>
+      <div class="col-md-6"><div class="small-muted">품목</div><div class="fw-semibold">${o.commodity}</div></div>
+      <div class="col-md-4"><div class="small-muted">항로</div><div class="fw-semibold mono">${o.route}</div></div>
+      <div class="col-md-4"><div class="small-muted">Mode</div><div class="fw-semibold">${o.mode}</div></div>
+      <div class="col-md-4"><div class="small-muted">CBM</div><div class="fw-semibold">${o.cbm}</div></div>
+    </div><hr>
+    <div class="small-muted mb-1">오더 상태</div>${pill(o.status)}
+    <div class="mt-3 small-muted">이 오더는 SAP ERP의 S/R 전송으로부터 FMS에서 자동 생성되었습니다.</div>`);}
+
+/* ---------- B/L ---------- */
+let blState={key:'',dir:''}; const blSort=makeSorter(blState);
+function fillCarrierFilter(){document.getElementById('blCarrier').innerHTML='<option value="">선사: 전체</option>'+CARRIERS.map(c=>`<option>${c}</option>`).join('');}
+function getBL(){const q=(document.getElementById('blSearch').value||'').toLowerCase();
+  const ty=document.getElementById('blType').value, ca=document.getElementById('blCarrier').value;
+  return BL.filter(b=>(`${b.blNo} ${b.vessel} ${b.route} ${b.carrier}`.toLowerCase().includes(q))&&(!ty||b.type===ty)&&(!ca||b.carrier===ca));}
+function sortBL(k){blSort(BL,k);renderBL();}
+function renderBL(){const rows=getBL();document.getElementById('blCount').textContent=`${rows.length} 건`;
+  document.getElementById('blBody').innerHTML=rows.map(b=>`
+    <tr onclick='blDetail("${b.blNo}")'>
+      <td class="mono fw-semibold text-primary">${b.blNo}</td>
+      <td><span class="chip">${b.type}</span></td><td>${b.carrier}</td>
+      <td><div class="fw-semibold small">${b.vessel}</div><div class="small-muted mono">V.${b.voyage}</div></td>
+      <td class="mono">${b.route}</td>
+      <td class="mono small"><span class="small-muted">ETD</span> ${b.etd}<br><span class="small-muted">ETA</span> ${b.eta}</td>
+      <td>${pill(b.status)}</td>
+    </tr>`).join('')||`<tr><td colspan="7" class="text-center small-muted py-4">결과 없음</td></tr>`;}
+function blDetail(no){const b=BL.find(x=>x.blNo===no);
+  openModal(`<i class="fa-solid fa-file-lines text-primary me-2"></i>${b.blNo} <span class="chip ms-2">${b.type} B/L</span>`,`
+    <div class="row g-3">
+      <div class="col-md-6"><div class="small-muted">Shipper</div><div class="fw-semibold">${b.shipper}</div></div>
+      <div class="col-md-6"><div class="small-muted">Consignee</div><div class="fw-semibold">${b.consignee}</div></div>
+      <div class="col-md-6"><div class="small-muted">선사 / 선명</div><div class="fw-semibold">${b.carrier} · ${b.vessel}</div></div>
+      <div class="col-md-6"><div class="small-muted">항차 / 컨테이너</div><div class="fw-semibold">V.${b.voyage} · ${b.cntr}</div></div>
+      <div class="col-md-4"><div class="small-muted">POL → POD</div><div class="fw-semibold mono">${b.route}</div></div>
+      <div class="col-md-4"><div class="small-muted">ETD</div><div class="fw-semibold mono">${b.etd}</div></div>
+      <div class="col-md-4"><div class="small-muted">ETA</div><div class="fw-semibold mono">${b.eta}</div></div>
+    </div><hr>
+    <div class="d-flex justify-content-between"><div><div class="small-muted">상태</div>${pill(b.status)}</div>
+    <button class="btn btn-outline-sap btn-sm" onclick="go('tracking');bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide()"><i class="fa-solid fa-route me-1"></i>Tracking 보기</button></div>`);}
+
+/* ---------- Invoice ---------- */
+let invState={key:'',dir:''}; const invSort=makeSorter(invState);
+function getInv(){const q=(document.getElementById('invSearch').value||'').toLowerCase();const st=document.getElementById('invStatus').value;
+  return INV.filter(v=>(`${v.invNo} ${v.customer} ${v.blNo}`.toLowerCase().includes(q))&&(!st||v.status===st));}
+function sortInv(k){invSort(INV,k);renderInv();}
+function renderInv(){const rows=getInv();document.getElementById('invCount').textContent=`${rows.length} 건`;
+  document.getElementById('invBody').innerHTML=rows.map(v=>`
+    <tr onclick='invDetail("${v.invNo}")'>
+      <td class="mono fw-semibold text-primary">${v.invNo}</td><td class="mono small-muted">${v.date}</td>
+      <td>${v.customer}</td><td class="mono">${v.blNo}</td>
+      <td class="text-end mono fw-semibold">${v.currency} ${num(v.total)}</td><td>${pill(v.status)}</td>
+    </tr>`).join('')||`<tr><td colspan="6" class="text-center small-muted py-4">결과 없음</td></tr>`;}
+function invDetail(no){const v=INV.find(x=>x.invNo===no);
+  openModal(`<i class="fa-solid fa-file-invoice-dollar text-primary me-2"></i>${v.invNo}`,`
+    <div class="row g-2 mb-2">
+      <div class="col-md-4"><div class="small-muted">고객</div><div class="fw-semibold">${v.customer}</div></div>
+      <div class="col-md-4"><div class="small-muted">B/L No</div><div class="fw-semibold mono">${v.blNo}</div></div>
+      <div class="col-md-4"><div class="small-muted">발행일</div><div class="fw-semibold mono">${v.date}</div></div>
+    </div>
+    <table class="table sap table-sm"><thead><tr><th>Charge</th><th class="text-end">Amount (${v.currency})</th></tr></thead>
+    <tbody>
+      <tr><td>Ocean Freight</td><td class="text-end mono">${num(v.oc)}</td></tr>
+      <tr><td>THC (터미널 화물처리)</td><td class="text-end mono">${num(v.thc)}</td></tr>
+      <tr><td>Documentation Fee</td><td class="text-end mono">${num(v.doc)}</td></tr>
+      <tr><td>CFS Charge</td><td class="text-end mono">${num(v.cfs)}</td></tr>
+      <tr><td>Other (Handling)</td><td class="text-end mono">${num(v.other)}</td></tr>
+      <tr class="fw-bold" style="background:#f2f6fb"><td>Total</td><td class="text-end mono">${v.currency} ${num(v.total)}</td></tr>
+    </tbody></table>
+    <div class="d-flex justify-content-end">${pill(v.status)}</div>`);}
+
+/* ---------- Cargo Tracking ---------- */
+function getTrkFiltered(){const q=(document.getElementById('trkSearch').value||'').toLowerCase();
+  return TRK.filter(t=>`${t.blNo} ${t.vessel} ${t.trackNo}`.toLowerCase().includes(q));}
+function renderTrkList(){const rows=getTrkFiltered();
+  document.getElementById('trkList').innerHTML=rows.map(t=>`
+    <div class="p-2 mb-2 rounded border d-flex justify-content-between align-items-center" style="cursor:pointer" onclick='showTrk("${t.blNo}",this)'>
+      <div><div class="mono fw-semibold text-primary">${t.blNo}</div><div class="small-muted">${t.dir} · ${t.route}</div></div>
+      ${pill(t.status)}
+    </div>`).join('')||`<div class="small-muted text-center py-3">결과 없음</div>`;}
+function showTrk(no,el){
+  document.querySelectorAll('#trkList .border').forEach(d=>d.style.background='');
+  if(el)el.style.background='#eaf3fc';
+  const t=TRK.find(x=>x.blNo===no);
+  const prog=Math.round((t.curIdx)/(t.steps.length-1)*100);
+  document.getElementById('trkDetail').innerHTML=`
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+      <div><div class="mono fw-bold fs-5 text-primary">${t.blNo}</div>
+        <div class="small-muted">${t.carrier} · ${t.vessel} · ${t.dir}</div></div>
+      ${pill(t.status)}
+    </div>
+    <div class="mb-3"><div class="d-flex justify-content-between small-muted mb-1"><span>${PORTS[t.polIdx].n}</span><span>ETA ${t.eta}</span><span>${PORTS[t.podIdx].n}</span></div>
+      <div class="progress" style="height:6px"><div class="progress-bar bg-primary" style="width:0%" id="trkProg"></div></div></div>
+    <div class="tl mt-3">${t.steps.map(s=>`
+      <div class="tl-item ${s.done?'done':(s.current?'current':'pending')}">
+        <span class="tl-dot">${s.done?'<i class="fa-solid fa-check" style="font-size:8px;color:#fff"></i>':''}</span>
+        <div class="tl-t">${s.name}</div>
+        <div class="tl-time">${s.time||'예정'}</div>
+      </div>`).join('')}</div>`;
+  setTimeout(()=>{document.getElementById('trkProg').style.width=prog+'%';},120);
+}
+
+/* ---------- Export / Import ---------- */
+function renderExport(){
+  const q=(document.getElementById('expSearch').value||'').toLowerCase();
+  const rows=TRK.filter(t=>t.dir==='Export'&&`${t.blNo} ${t.vessel}`.toLowerCase().includes(q));
+  document.getElementById('expCount').textContent=`${rows.length} 건`;
+  document.getElementById('expList').innerHTML=rows.map(t=>miniFlowCard(t,['S/R','Booking','Gate In','Vessel','Departed','ETA'])).join('')||emptyRow();
+}
+function renderImport(){
+  const q=(document.getElementById('impSearch').value||'').toLowerCase();
+  const rows=TRK.filter(t=>t.dir==='Import'&&`${t.blNo} ${t.vessel}`.toLowerCase().includes(q));
+  document.getElementById('impCount').textContent=`${rows.length} 건`;
+  document.getElementById('impList').innerHTML=rows.map(t=>miniFlowCard(t,['Departed','Arrival','하선','Customs','반출','Delivery'])).join('')||emptyRow();
+}
+function emptyRow(){return `<div class="small-muted text-center py-4">결과 없음</div>`;}
+function miniFlowCard(t,labels){
+  const total=labels.length, cur=Math.min(t.curIdx,total-1), pct=Math.round(cur/(total-1)*100);
+  return `<div class="card p-3 mb-2">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+      <div><span class="mono fw-semibold text-primary">${t.blNo}</span> <span class="small-muted ms-1">${t.carrier} · ${t.vessel}</span></div>
+      <div>${pill(t.status)} <span class="chip ms-1">${t.route}</span></div>
+    </div>
+    <div class="d-flex align-items-center gap-1 flex-wrap">
+      ${labels.map((l,i)=>`<div class="text-center" style="flex:1;min-width:70px">
+        <div class="mx-auto mb-1" style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;${i<=cur?'background:#0a6ed1;color:#fff':'background:#eef1f5;color:#9aa7b4'}">${i<cur?'<i class="fa-solid fa-check"></i>':(i===cur?'<i class="fa-solid fa-location-dot"></i>':i+1)}</div>
+        <div class="small-muted" style="font-size:10.5px">${l}</div></div>${i<labels.length-1?'<div style="flex:0 0 14px;height:2px;background:'+(i<cur?'#0a6ed1':'#eef1f5')+'"></div>':''}`).join('')}
+    </div>
+    <div class="progress mt-2" style="height:5px"><div class="progress-bar bg-primary" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+/* ---------- Document Viewer ---------- */
+function fillDocSelect(){
+  const t=document.getElementById('docType').value;
+  let opts='';
+  if(t==='ci')opts=CI.map(c=>`<option value="${c.ciNo}">${c.ciNo} · ${c.buyer}</option>`).join('');
+  if(t==='pl')opts=PL.map(p=>`<option value="${p.plNo}">${p.plNo}</option>`).join('');
+  if(t==='bl')opts=BL.map(b=>`<option value="${b.blNo}">${b.blNo} · ${b.type}</option>`).join('');
+  if(t==='inv')opts=INV.map(v=>`<option value="${v.invNo}">${v.invNo} · ${v.customer}</option>`).join('');
+  document.getElementById('docPick').innerHTML=opts;
+  renderDoc();
+}
+function renderDoc(){
+  const t=document.getElementById('docType').value, id=document.getElementById('docPick').value, box=document.getElementById('docView');
+  if(t==='ci'){const c=CI.find(x=>x.ciNo===id);if(!c)return;
+    box.innerHTML=`<div class="doc-preview"><div class="d-flex justify-content-between"><div><h6>COMMERCIAL INVOICE</h6><div class="small-muted">${c.ciNo}</div></div><div class="doc-stamp">SUNJIN</div></div><hr>
+      <div class="row"><div class="col-6"><div class="small-muted">Seller</div><b>${c.seller}</b></div><div class="col-6"><div class="small-muted">Buyer</div><b>${c.buyer}</b></div>
+      <div class="col-4 mt-2"><div class="small-muted">Incoterms</div><b>${c.incoterms}</b></div><div class="col-4 mt-2"><div class="small-muted">Date</div><b>${c.date}</b></div><div class="col-4 mt-2"><div class="small-muted">Ref S/R</div><b class="mono">${c.srNo}</b></div></div>
+      <table class="table doc-table mt-3 table-sm"><thead><tr><th>Description</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Amount</th></tr></thead>
+      <tbody>${c.items.map(it=>`<tr><td>${it.d}</td><td class="text-end">${it.q}</td><td class="text-end">$${it.up}</td><td class="text-end">$${num((it.q*it.up).toFixed(0))}</td></tr>`).join('')}
+      <tr class="fw-bold"><td colspan="3" class="text-end">Total (${c.currency})</td><td class="text-end">$${num(c.amount)}</td></tr></tbody></table></div>`;}
+  if(t==='pl'){const p=PL.find(x=>x.plNo===id);if(!p)return;
+    box.innerHTML=`<div class="doc-preview"><div class="d-flex justify-content-between"><div><h6>PACKING LIST</h6><div class="small-muted">${p.plNo}</div></div><div class="doc-stamp">SUNJIN</div></div><hr>
+      <div class="row"><div class="col-4"><div class="small-muted">Ref S/R</div><b class="mono">${p.srNo}</b></div><div class="col-4"><div class="small-muted">Date</div><b>${p.date}</b></div><div class="col-4"><div class="small-muted">Commodity</div><b>${p.commodity}</b></div></div>
+      <table class="table doc-table mt-3 table-sm"><tbody>
+      <tr><td>Total Packages</td><td class="text-end fw-semibold">${p.packages} CTNS</td></tr>
+      <tr><td>Net Weight</td><td class="text-end fw-semibold">${num(p.net)} kg</td></tr>
+      <tr><td>Gross Weight</td><td class="text-end fw-semibold">${num(p.gross)} kg</td></tr>
+      <tr><td>Measurement (CBM)</td><td class="text-end fw-semibold">${p.cbm} m³</td></tr></tbody></table></div>`;}
+  if(t==='bl'){const b=BL.find(x=>x.blNo===id);if(!b)return;
+    box.innerHTML=`<div class="doc-preview"><div class="d-flex justify-content-between"><div><h6>BILL OF LADING</h6><div class="small-muted">${b.blNo} · ${b.type}</div></div><div class="doc-stamp">${b.carrier}</div></div><hr>
+      <div class="row"><div class="col-6"><div class="small-muted">Shipper</div><b>${b.shipper}</b></div><div class="col-6"><div class="small-muted">Consignee</div><b>${b.consignee}</b></div>
+      <div class="col-6 mt-2"><div class="small-muted">Vessel / Voyage</div><b>${b.vessel} V.${b.voyage}</b></div><div class="col-6 mt-2"><div class="small-muted">Container</div><b>${b.cntr}</b></div>
+      <div class="col-4 mt-2"><div class="small-muted">POL</div><b class="mono">${PORTS[b.polIdx].c}</b></div><div class="col-4 mt-2"><div class="small-muted">POD</div><b class="mono">${PORTS[b.podIdx].c}</b></div><div class="col-4 mt-2"><div class="small-muted">ETD / ETA</div><b class="mono small">${b.etd} / ${b.eta}</b></div></div></div>`;}
+  if(t==='inv'){const v=INV.find(x=>x.invNo===id);if(!v)return;
+    box.innerHTML=`<div class="doc-preview"><div class="d-flex justify-content-between"><div><h6>FREIGHT INVOICE</h6><div class="small-muted">${v.invNo}</div></div><div class="doc-stamp">SUNJIN</div></div><hr>
+      <div class="row"><div class="col-6"><div class="small-muted">Bill To</div><b>${v.customer}</b></div><div class="col-6"><div class="small-muted">B/L No</div><b class="mono">${v.blNo}</b></div></div>
+      <table class="table doc-table mt-3 table-sm"><tbody>
+      <tr><td>Ocean Freight</td><td class="text-end">$${num(v.oc)}</td></tr><tr><td>THC</td><td class="text-end">$${num(v.thc)}</td></tr>
+      <tr><td>Documentation</td><td class="text-end">$${num(v.doc)}</td></tr><tr><td>CFS</td><td class="text-end">$${num(v.cfs)}</td></tr>
+      <tr><td>Other</td><td class="text-end">$${num(v.other)}</td></tr>
+      <tr class="fw-bold" style="background:#f2f6fb"><td>Total</td><td class="text-end">$${num(v.total)}</td></tr></tbody></table>
+      <div class="text-end">${pill(v.status)}</div></div>`;}
+}
+
+/* ---------- CBM / Volume ---------- */
+function calcCBM(){
+  const L=+cbmL.value||0,W=+cbmW.value||0,H=+cbmH.value||0,Q=+cbmQ.value||0,KG=+cbmKg.value||0;
+  const mode=cbmMode.value;
+  const cbm=(L*W*H*Q)/1000000;
+  const gw=KG*Q;
+  let vw, cw, note='';
+  if(mode==='air'){ vw=(L*W*H*Q)/6000; cw=Math.max(gw,vw); note='(부피÷6000)'; document.getElementById('rVWnote').textContent='kg · 항공 기준(/6000)';}
+  else{ vw=cbm*1000; cw=Math.max(gw,cbm*1000); note='(1CBM=1,000kg 기준)'; document.getElementById('rVWnote').textContent='kg · 해상 R/T 기준';}
+  rCBM.textContent=cbm.toFixed(3);
+  rGW.textContent=num(gw.toFixed(0));
+  rVW.textContent=num(vw.toFixed(0));
+  rCW.textContent=num(cw.toFixed(0));
+  document.getElementById('rCWnote').textContent=(cw===gw?'실중량 적용':'부피중량 적용')+' '+note;
+  const cap20=33, cap40=67;
+  document.getElementById('cbmHint').innerHTML=`
+    <div class="d-flex justify-content-between small mb-1"><span>20ft DRY (약 33 CBM)</span><span class="mono">${Math.min(100,(cbm/cap20*100)).toFixed(0)}% 적재</span></div>
+    <div class="progress mb-2"><div class="progress-bar bg-primary" style="width:${Math.min(100,cbm/cap20*100)}%"></div></div>
+    <div class="d-flex justify-content-between small mb-1"><span>40ft HC (약 67 CBM)</span><span class="mono">${Math.min(100,(cbm/cap40*100)).toFixed(0)}% 적재</span></div>
+    <div class="progress"><div class="progress-bar bg-success" style="width:${Math.min(100,cbm/cap40*100)}%"></div></div>`;
+}
+
+/* ---------- Freight Calculator ---------- */
+const ROUTE_RATE={}; // baseUSD per 20ft, lcl per cbm, air per kg
+function fillFreightRoutes(){
+  const sel=document.getElementById('frRoute');
+  const list=[['KRPUS','USLAX'],['KRPUS','NLRTM'],['KRPUS','SGSIN'],['KRPUS','CNSHA'],['KRINC','USNYC'],['KRPUS','DEHAM'],['KRPUS','AEJEA'],['KRPUS','JPTYO']];
+  sel.innerHTML=list.map((r,i)=>`<option value="${i}">${r[0]} → ${r[1]}</option>`).join('');
+  list.forEach((r,i)=>{ROUTE_RATE[i]={pol:r[0],pod:r[1],c20:ri(900,1600),lcl:ri(28,55),air:+(rnd()*2+3).toFixed(2),tt:ri(9,34)};});
+}
+function frToggle(){const m=document.getElementById('frMode').value;
+  document.getElementById('frFcl').classList.toggle('d-none',m!=='FCL');
+  document.getElementById('frLcl').classList.toggle('d-none',m==='FCL');}
+function calcFreight(){
+  loading('운임 계산 중…');
+  setTimeout(()=>{
+    loadingOff();
+    const idx=+document.getElementById('frRoute').value, r=ROUTE_RATE[idx], m=document.getElementById('frMode').value;
+    let base=0, unit='', detail='';
+    if(m==='FCL'){
+      const cn=document.getElementById('frCntr').value, q=+document.getElementById('frQty').value||1;
+      const mult=cn==='20'?1:(cn==='40'?1.8:1.95);
+      base=Math.round(r.c20*mult)*q; unit=`${cn}ft × ${q}`;
+      detail=`Ocean Freight ${cn}ft × ${q} = $${num(base)}`;
+    }else if(m==='LCL'){
+      const cbm=+document.getElementById('frCbm').value||1, wt=+document.getElementById('frWt').value||0;
+      const rt=Math.max(cbm,wt/1000); base=Math.round(rt*r.lcl); unit=`R/T ${rt.toFixed(2)}`;
+      detail=`LCL Rate $${r.lcl}/RT × ${rt.toFixed(2)} R/T = $${num(base)}`;
+    }else{
+      const wt=+document.getElementById('frWt').value||0; base=Math.round(wt*r.air); unit=`${num(wt)}kg`;
+      detail=`Air Rate $${r.air}/kg × ${num(wt)}kg = $${num(base)}`;
+    }
+    const thc=ri(120,260), doc=45, other=ri(60,180), total=base+thc+doc+other;
+    document.getElementById('frResult').innerHTML=`
+      <div class="text-start">
+        <div class="d-flex justify-content-between mb-2"><span class="small-muted">항로 · Mode</span><span class="fw-semibold mono">${r.pol}→${r.pod} · ${m} (${unit})</span></div>
+        <table class="table sap table-sm">
+          <tr><td>Base Freight</td><td class="text-end mono">$${num(base)}</td></tr>
+          <tr><td>THC</td><td class="text-end mono">$${num(thc)}</td></tr>
+          <tr><td>Documentation</td><td class="text-end mono">$${doc}</td></tr>
+          <tr><td>Other</td><td class="text-end mono">$${num(other)}</td></tr>
+          <tr class="fw-bold" style="background:#f2f6fb"><td>예상 총액 (USD)</td><td class="text-end mono fs-6 text-primary">$${num(total)}</td></tr>
+        </table>
+        <div class="small-muted">${detail}</div>
+        <div class="small-muted mt-1"><i class="fa-solid fa-clock me-1"></i>예상 Transit Time ${r.tt}일 · 본 금액은 데모용 예시 요율입니다.</div>
+      </div>`;
+    toast('운임 계산 완료',`총 예상 운임 $${num(total)}`,'success');
+  },600);
+}
+
+/* ---------- Transit Time ---------- */
+function fillTransitPorts(){
+  const po=PORTS.map(p=>`<option value="${p.c}">${p.c} ${p.n}</option>`).join('');
+  ttPol.innerHTML=po; ttPod.innerHTML=po;
+  ttPol.value='KRPUS'; ttPod.value='USLAX';
+}
+function calcTransit(){
+  loading('스케줄 조회 중…');
+  setTimeout(()=>{
+    loadingOff();
+    const pol=ttPol.value, pod=ttPod.value;
+    if(pol===pod){toast('조회 오류','출발항과 도착항이 동일합니다.','warn');return;}
+    const rows=Array.from({length:4},(_,i)=>{
+      const ci=ri(0,9), tt=ri(9,36), dep=dateStr(i*4+2);
+      const arr=dateStr(i*4+2+tt);
+      return {carrier:CARRIERS[ci],vessel:VESSELS[ci],voy:`${ri(1,39)}${pick(['E','W'])}`,dep,arr,tt,ts:pick(['Direct','Direct','1 T/S (SGSIN)','1 T/S (CNSHA)'])};
+    }).sort((a,b)=>a.tt-b.tt);
+    document.getElementById('ttResult').innerHTML=`
+      <div class="mb-2 fw-semibold">${pol} → ${pod} <span class="chip ms-1">${rows.length} 항차</span></div>
+      <div class="table-wrap"><table class="table sap table-sm mb-0"><thead><tr><th>선사 / 선명</th><th>항차</th><th>ETD</th><th>ETA</th><th>T/S</th><th class="text-end">T/T</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr><td><div class="fw-semibold small">${r.carrier}</div><div class="small-muted">${r.vessel}</div></td>
+        <td class="mono">${r.voy}</td><td class="mono small">${r.dep}</td><td class="mono small">${r.arr}</td>
+        <td><span class="chip">${r.ts}</span></td><td class="text-end fw-bold mono">${r.tt}일</td></tr>`).join('')}</tbody></table></div>`;
+    toast('조회 완료',`${rows.length}개 항차를 찾았습니다.`,'success');
+  },650);
+}
+
+/* ---------- Dashboard charts ---------- */
+let dchs=[];
+function renderDashboard(){
+  document.getElementById('kpiShip').textContent=num(BL.length+ORD.length);
+  document.getElementById('kpiRev').textContent=num(INV.reduce((s,v)=>s+v.total,0));
+  document.getElementById('kpiTT').textContent='18.6일';
+  dchs.forEach(c=>c.destroy()); dchs=[];
+  const blue='#0a6ed1';
+  dchs.push(new Chart(chMonthly,{type:'bar',
+    data:{labels:['1월','2월','3월','4월','5월','6월','7월'],datasets:[{label:'선적 건수',data:[38,42,47,51,49,58,63],backgroundColor:blue,borderRadius:5}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}}));
+  const mc={FCL:0,LCL:0,AIR:0}; BL.forEach(b=>mc[b.mode]++);
+  dchs.push(new Chart(chMode,{type:'doughnut',
+    data:{labels:['FCL','LCL','AIR'],datasets:[{data:[mc.FCL,mc.LCL,mc.AIR],backgroundColor:['#0a6ed1','#107e3e','#e9730c'],borderWidth:0}]},
+    options:{plugins:{legend:{position:'bottom'}},cutout:'60%'}}));
+  const rc={}; BL.forEach(b=>{rc[b.route]=(rc[b.route]||0)+1;});
+  const top=Object.entries(rc).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  dchs.push(new Chart(chRoute,{type:'bar',
+    data:{labels:top.map(t=>t[0]),datasets:[{label:'건수',data:top.map(t=>t[1]),backgroundColor:'#0854a0',borderRadius:4}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}}}}));
+  const pc={Paid:0,Unpaid:0,Overdue:0}; INV.forEach(v=>pc[v.status]++);
+  dchs.push(new Chart(chPay,{type:'pie',
+    data:{labels:['Paid','Unpaid','Overdue'],datasets:[{data:[pc.Paid,pc.Unpaid,pc.Overdue],backgroundColor:['#107e3e','#94a3b0','#bb0000'],borderWidth:0}]},
+    options:{plugins:{legend:{position:'bottom'}}}}));
+}
+
+/* ---------- FAQ ---------- */
+const FAQS=[
+  ['연동에 필요한 인터페이스 방식은 무엇인가요?','SAP 표준 IDoc, REST API, EDI(EDIFACT/ANSI X12)를 모두 지원합니다. 고객사 시스템 환경에 맞춰 실시간(REST/Webhook) 또는 배치(IDoc/EDI) 방식을 선택할 수 있습니다.'],
+  ['어떤 문서가 ERP에서 FMS로 전송되나요?','선적요청서(S/R), 상업송장(C/I), 패킹리스트(P/L)가 ERP에서 FMS로 전송되며, FMS는 오더 생성 후 B/L 번호·청구내역·화물추적 상태를 회신합니다.'],
+  ['전송 실패(Error) 시 어떻게 처리되나요?','처리상태 Dashboard에서 Error 건을 실시간 모니터링하고, 매핑 오류·필수값 누락 등 사유를 표시합니다. 자동 재시도(Retry) 및 수동 재전송을 지원합니다.'],
+  ['데이터 정합성은 어떻게 보장하나요?','문서번호·수량·CBM·금액을 키로 양 시스템 간 대사(Reconciliation)를 수행하며, 불일치 발생 시 알림을 발송합니다.'],
+  ['구축 기간과 범위는 어떻게 되나요?','표준 인터페이스 기준 파일럿 4~6주, 전체 문서 확장 포함 8~12주가 일반적입니다. 요건 정의 → 매핑 설계 → 개발 → 통합테스트 → 오픈 단계로 진행합니다.'],
+  ['보안은 어떻게 처리되나요?','전송 구간은 TLS 암호화 및 IP 화이트리스트, API Key/OAuth 인증을 적용하며, 접근 이력과 전송 로그를 보관합니다.']
+];
+function renderFAQ(){
+  document.getElementById('faqAcc').innerHTML=FAQS.map((f,i)=>`
+    <div class="accordion-item">
+      <h2 class="accordion-header"><button class="accordion-button ${i?'collapsed':''}" data-bs-toggle="collapse" data-bs-target="#fq${i}">${f[0]}</button></h2>
+      <div id="fq${i}" class="accordion-collapse collapse ${i?'':'show'}" data-bs-parent="#faqAcc"><div class="accordion-body small-muted">${f[1]}</div></div>
+    </div>`).join('');
+}
+
+/* ---------- Interface log animation ---------- */
+function logLine(html){const el=document.getElementById('ifaceLog');el.innerHTML+=html+'<br>';el.scrollTop=el.scrollHeight;}
+function runInterface(){
+  const el=document.getElementById('ifaceLog');
+  const seq=[
+    ['<span class="t">[08:01:22]</span> SAP ERP 연결 수립 · session=OK',0],
+    ['<span class="t">[08:01:23]</span> IDoc 수신: S/R-261012 (선적요청)',500],
+    ['<span class="t">[08:01:23]</span> 필드 매핑 → FMS Order 변환 중…',1000],
+    ['<span class="t">[08:01:24]</span> <span style="color:#8fe6b4">✓ Order ORD-266001 생성 (Success)</span>',1500],
+    ['<span class="t">[08:01:25]</span> C/I-262004 수신 · Invoice 매칭 OK',2100],
+    ['<span class="t">[08:01:26]</span> P/L-263004 수신 · 수량/CBM 검증 <span class="wn">경고: 중량 편차 2%</span>',2700],
+    ['<span class="t">[08:01:27]</span> FMS → SAP 회신: B/L No SJLB26050007',3300],
+    ['<span class="t">[08:01:28]</span> Tracking Webhook 등록 완료',3800],
+    ['<span class="t">[08:01:28]</span> <span style="color:#8fe6b4">인터페이스 배치 완료 · 3건 처리 (성공 3 / 오류 0)</span>',4200],
+  ];
+  seq.forEach(([h,d])=>setTimeout(()=>logLine(h),d));
+  setTimeout(()=>toast('인터페이스 완료','S/R·C/I·P/L 3건이 FMS로 정상 전송되었습니다.','success'),4400);
+}
+let packetTimer=null;
+function restartPackets(){
+  document.querySelectorAll('.iface-stage .packet').forEach(p=>{p.classList.remove('run');void p.offsetWidth;p.classList.add('run');});
+}
+
+/* ---------- Process flow animation ---------- */
+function playFlow(){
+  const steps=document.querySelectorAll('#flowSteps .flow-step');
+  steps.forEach(s=>s.classList.remove('on'));
+  steps.forEach((s,i)=>setTimeout(()=>{
+    steps.forEach(x=>x.classList.remove('on'));
+    s.classList.add('on');
+    if(i===steps.length-1)setTimeout(()=>{steps.forEach(x=>x.classList.add('on'));toast('프로세스','전체 물류 흐름 시연이 완료되었습니다.','success');},600);
+  },i*700));
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelector('.navlink[data-id="home"]').classList.add('active');
+  setTimeout(()=>toast('SUNJIN FMS Portal','SAP ERP ↔ FMS 연동 데모에 오신 것을 환영합니다.','info'),600);
+  // preload interface packets when landing on arch handled lazily
+});
+</script>
+</body>
+</html>
