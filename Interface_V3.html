@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUNJIN LOGISTICS - ERP & FMS 연동 서비스 데모</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bytes.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a4b9b 100%);
+            color: white;
+            padding: 80px 0;
+        }
+        .feature-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .nav-link.active {
+            font-weight: bold;
+            border-bottom: 2px solid white;
+        }
+        .step-icon {
+            font-size: 2.5rem;
+            color: #0d6efd;
+        }
+        .data-table-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="bi bi-globe2 me-2 text-primary"></i>
+                <strong>SUNJIN LOGISTICS</strong>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#introduction">회사소개</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#integration">연동프로세스 & 특장점</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#demo-console">FMS 모니터링 데모</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#tools">물류 편의도구</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-3">SAP ERP & SUNJIN FMS 연동 서비스</h1>
+            <p class="lead mb-4">수작업 제로화, 실시간 데이터 동기화로 글로벌 물류 경쟁력을 한 단계 더 업그레이드 하십시오.</p>
+            <a href="#demo-console" class="btn btn-warning btn-lg fw-bold px-4 py-3">실시간 연동 데모 체험하기</a>
+        </div>
+    </section>
+
+    <section id="introduction" class="py-5 bg-white">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <span class="badge bg-primary mb-2">Company Overview</span>
+                    <h2 class="fw-bold mb-3">혁신적인 글로벌 물류 파트너 <br><span class="text-primary">선진로지스틱스</span></h2>
+                    <p class="text-muted leading-relaxed">
+                        선진로지스틱스는 다년간 축적된 물류 Know-how와 독자적인 FMS(포워딩 시스템)를 기반으로 고객사 맞춤형 통합 물류 솔루션을 제공합니다. 단순 운송을 넘어 고객사 SAP ERP와의 안정적인 Interface 표준을 설계하여 완벽하게 흐르는 공급망 관리를 실현합니다.
+                    </p>
+                    <div class="border-start border-4 border-primary ps-3 my-4">
+                        <p class="mb-1 fw-bold">본사 주소</p>
+                        <p class="text-muted mb-0">Sunjin Bldg. 4th Fl. Yangjae daero 1553, Kangdong-Gu, Seoul, Korea</p>
+                    </div>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <div class="p-4 bg-light rounded-3">
+                        <i class="bi bi-cpu" style="font-size: 5rem; color: #0d6efd;"></i>
+                        <h4 class="mt-3 fw-bold">왜 시스템 연동(Interface)일까요?</h4>
+                        <p class="text-muted mb-0">엑셀 업로드, 이메일 수발신, 수작업 이중 입력을 완전히 제거하여 전송 오류율 0% 및 실시간 추적 환경을 보장합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="integration" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center fw-bold mb-5">ERP-FMS 실시간 데이터 연동 프로세스</h2>
+            
+            <div class="row g-4 mb-5">
+                <div class="col-md-4 text-center">
+                    <div class="card h-100 p-4 border-0 shadow-sm">
+                        <i class="bi bi-cloud-arrow-up step-icon mb-3"></i>
+                        <h5 class="fw-bold">1. ERP 데이터 송신</h5>
+                        <p class="text-muted small">고객사 SAP ERP에서 오더 생성 시 S/R, C/I, P/L 데이터가 실시간 API/RFC 방식으로 선진 FMS에 전송됩니다.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="card h-100 p-4 border-0 shadow-sm">
+                        <i class="bi bi-gear-wide-connected step-icon mb-3 text-success"></i>
+                        <h5 class="fw-bold">2. FMS 자동 오더 생성</h5>
+                        <p class="text-muted small">선진 FMS가 수신된 정보를 기반으로 Booking, Master/House B/L 및 선적 오더를 자동 생성합니다.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="card h-100 p-4 border-0 shadow-sm">
+                        <i class="bi bi-clipboard-data step-icon mb-3 text-warning"></i>
+                        <h5 class="fw-bold">3. 처리결과 및 추적 환류</h5>
+                        <p class="text-muted small">선적 상태, 실시간 화물 추적, 관세 및 정산 청구 정보가 고객사 ERP로 자동 피드백(Interface)됩니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-3 shadow-sm">
+                <h4 class="fw-bold mb-4 text-center">연동 시 기대효과 및 주요 이점</h4>
+                <div class="row g-3">
+                    <div class="col-md-6 d-flex">
+                        <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                        <div>
+                            <h6 class="fw-bold">업무 공수 85% 감축</h6>
+                            <p class="text-muted small">포워더에게 이메일로 인보이스, 패킹 전달 후 수작업 등록을 대기할 필요가 없습니다.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex">
+                        <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                        <div>
+                            <h6 class="fw-bold">실시간 가시성(Visibility) 확보</h6>
+                            <p class="text-muted small">관세청 통관 진행 정보 및 화물 추적 정보를 ERP 내에서 실시간 조회할 수 있습니다.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex">
+                        <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                        <div>
+                            <h6 class="fw-bold">정산 검증 오류 해결</h6>
+                            <p class="text-muted small">FMS 청구 내역과 고객사 ERP 검수가 일치되어 마감 업무 및 전표 발행 처리가 즉시 연동됩니다.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex">
+                        <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                        <div>
+                            <h6 class="fw-bold">정확한 납기 예측</h6>
+                            <p class="text-muted small">출항/입항 지연 이슈 발생 시 ERP 알림 연동을 지원하여 백오더 리스크를 방지합니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo-console" class="py-5 bg-white">
+        <div class="container">
+            <div class="text-center mb-5">
+                <span class="badge bg-success mb-2">Live Demo Sandbox</span>
+                <h2 class="fw-bold">FMS 연동 데이터 실시간 조회 콘솔</h2>
+                <p class="text-muted">실제 연동되었을 때 제공되는 화면 UI의 목업입니다. 각 탭을 누르고 테이블 행을 선택하여 수신 상세 데이터를 검증해보세요.</p>
+            </div>
+
+            <ul class="nav nav-pills nav-fill mb-4 shadow-sm rounded p-1 bg-light" id="myTab" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active fw-bold" id="sr-tab" data-bs-toggle="tab" data-bs-target="#sr-panel" type="button"><i class="bi bi-file-earmark-text me-2"></i>S/R, C/I, P/L 연동</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold" id="bl-tab" data-bs-toggle="tab" data-bs-target="#bl-panel" type="button"><i class="bi bi-shield-check me-2"></i>오더 및 B/L 생성</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold" id="tracking-tab" data-bs-toggle="tab" data-bs-target="#tracking-panel" type="button"><i class="bi bi-truck-flatbed me-2"></i>실시간 화물추적</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold" id="billing-tab" data-bs-toggle="tab" data-bs-target="#billing-panel" type="button"><i class="bi bi-calculator-fill me-2"></i>청구 및 Invoice</button>
+                </li>
+            </ul>
+
+            <div class="tab-content border p-4 rounded-3 bg-light" id="myTabContent">
+                
+                <div class="tab-pane fade show active" id="sr-panel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">ERP 송신 데이터 수신 로그 (S/R, C/I, P/L)</h5>
+                        <span class="badge bg-primary">연동 정상 작동 중</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle text-center bg-white">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>송신일시</th>
+                                    <th>ERP 연동번호</th>
+                                    <th>Shipping Request No</th>
+                                    <th>C/I & P/L Invoice No</th>
+                                    <th>화물개수(PKG)</th>
+                                    <th>총중량(G/W)</th>
+                                    <th>상태</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr onclick="showDetail('SR-20260714-001', 'SJ26-SR-9481', 'INV-2026-US01', '120 PKG', '2,450.00 kg', 'FMS 접수완료', '2026-07-14 10:15')" style="cursor:pointer;">
+                                    <td>2026-07-14 10:15</td>
+                                    <td><span class="badge bg-secondary">ERP_INT_0019</span></td>
+                                    <td class="text-primary fw-bold">SJ26-SR-9481</td>
+                                    <td>INV-2026-US01</td>
+                                    <td>120 PKG</td>
+                                    <td>2,450.00 kg</td>
+                                    <td><span class="badge bg-success">FMS 접수완료</span></td>
+                                </tr>
+                                <tr onclick="showDetail('SR-20260713-002', 'SJ26-SR-9410', 'INV-2026-DE02', '45 PKG', '980.00 kg', 'B/L 발행 완료', '2026-07-13 15:40')" style="cursor:pointer;">
+                                    <td>2026-07-13 15:40</td>
+                                    <td><span class="badge bg-secondary">ERP_INT_0018</span></td>
+                                    <td class="text-primary fw-bold">SJ26-SR-9410</td>
+                                    <td>INV-2026-DE02</td>
+                                    <td>45 PKG</td>
+                                    <td>980.00 kg</td>
+                                    <td><span class="badge bg-primary">B/L 발행 완료</span></td>
+                                </tr>
+                                <tr onclick="showDetail('SR-20260712-005', 'SJ26-SR-9399', 'INV-2026-JP01', '350 PKG', '8,120.00 kg', '선적대기', '2026-07-12 09:20')" style="cursor:pointer;">
+                                    <td>2026-07-12 09:20</td>
+                                    <td><span class="badge bg-secondary">ERP_INT_0017</span></td>
+                                    <td class="text-primary fw-bold">SJ26-SR-9399</td>
+                                    <td>INV-2026-JP01</td>
+                                    <td>350 PKG</td>
+                                    <td>8,120.00 kg</td>
+                                    <td><span class="badge bg-info text-dark">선적대기</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <small class="text-muted">* 위 행(Row)을 클릭하시면 실제 인터페이스 수신 필드(JSON 구조) 매핑 데이터 팝업창을 확인할 수 있습니다.</small>
+                </div>
+
+                <div class="tab-pane fade" id="bl-panel">
+                    <h5 class="fw-bold mb-3">자동 생성 B/L 정보 리스트</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle bg-white">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>FMS 오더번호</th>
+                                    <th>Master B/L No.</th>
+                                    <th>House B/L No.</th>
+                                    <th>출발지(POL)</th>
+                                    <th>도착지(POD)</th>
+                                    <th>선명/항차(Vessel)</th>
+                                    <th>서류출력</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold text-success">SJO-20260714-01</td>
+                                    <td>EGLV142618902</td>
+                                    <td class="text-primary fw-bold">SJHB2607901</td>
+                                    <td>KRINC (Incheon)</td>
+                                    <td>USLAX (Los Angeles)</td>
+                                    <td>EVER GREEN / 012E</td>
+                                    <td><button class="btn btn-sm btn-outline-dark" onclick="alert('House B/L 인쇄 화면을 호출합니다. (PDF)')"><i class="bi bi-printer"></i> H-B/L</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-success">SJO-20260713-05</td>
+                                    <td>ONEYHKG294812</td>
+                                    <td class="text-primary fw-bold">SJHB2607898</td>
+                                    <td>KRPUS (Busan)</td>
+                                    <td>DEHAM (Hamburg)</td>
+                                    <td>ONE APUS / 042W</td>
+                                    <td><button class="btn btn-sm btn-outline-dark" onclick="alert('House B/L 인쇄 화면을 호출합니다. (PDF)')"><i class="bi bi-printer"></i> H-B/L</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tracking-panel">
+                    <h5 class="fw-bold mb-3">글로벌 실시간 화물 추적 (Milestone Tracking)</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="list-group">
+                                <button type="button" class="list-group-item list-group-item-action active d-flex justify-content-between align-items-center" onclick="changeTrackDemo('SJHB2607901')">
+                                    SJHB2607901 (LA행)
+                                    <span class="badge bg-light text-primary rounded-pill">운송중</span>
+                                </button>
+                                <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="changeTrackDemo('SJHB2607898')">
+                                    SJHB2607898 (함부르크행)
+                                    <span class="badge bg-success rounded-pill">도착완료</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="p-3 bg-white border rounded">
+                                <h6 class="fw-bold mb-3"><i class="bi bi-pin-map-fill text-danger"></i> 실시간 운송 현황 - <span id="track-id">SJHB2607901</span></h6>
+                                <div class="position-relative m-4">
+                                    <div class="progress" style="height: 4px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 66%;" id="track-progress"></div>
+                                    </div>
+                                    <div class="position-absolute top-0 start-0 translate-middle text-center">
+                                        <span class="badge rounded-pill bg-success"><i class="bi bi-house"></i></span>
+                                        <p class="small mt-1 mb-0">화물인수<br><span class="text-muted">(07/11)</span></p>
+                                    </div>
+                                    <div class="position-absolute top-0 start-33 translate-middle text-center" style="left: 33%">
+                                        <span class="badge rounded-pill bg-success"><i class="bi bi-ship"></i></span>
+                                        <p class="small mt-1 mb-0">출항(ATD)<br><span class="text-muted">(07/13)</span></p>
+                                    </div>
+                                    <div class="position-absolute top-0 start-66 translate-middle text-center" style="left: 66%">
+                                        <span class="badge rounded-pill bg-primary" id="track-node-3"><i class="bi bi-globe"></i></span>
+                                        <p class="small mt-1 mb-0" id="track-node-3-text">운송중<br><span class="text-muted">(현재단계)</span></p>
+                                    </div>
+                                    <div class="position-absolute top-0 start-100 translate-middle text-center" style="left: 100%">
+                                        <span class="badge rounded-pill bg-secondary" id="track-node-4"><i class="bi bi-building"></i></span>
+                                        <p class="small mt-1 mb-0" id="track-node-4-text">입항(ETA)<br><span class="text-muted">(07/28 예정)</span></p>
+                                    </div>
+                                </div>
+                                <div class="mt-5 p-3 bg-light rounded text-center">
+                                    <small class="text-muted">관세청 유니패스 수입/수출화물 진행정보 Open API와 실시간 파이프라인 연계 완료</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="billing-panel">
+                    <h5 class="fw-bold mb-3">선적별 청구 및 Invoice 정보</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle bg-white text-center">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>청구월</th>
+                                    <th>H-B/L No.</th>
+                                    <th>운임항목</th>
+                                    <th>통화</th>
+                                    <th>청구금액</th>
+                                    <th>공급가액(KRW)</th>
+                                    <th>ERP 정산전표 상태</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>2026-07</td>
+                                    <td class="fw-bold">SJHB2607901</td>
+                                    <td>OCEAN FREIGHT 외</td>
+                                    <td>USD</td>
+                                    <td>$2,450.00</td>
+                                    <td>₩3,258,500</td>
+                                    <td><span class="badge bg-warning text-dark"><i class="bi bi-clock-history"></i> 승인대기</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2026-07</td>
+                                    <td class="fw-bold">SJHB2607898</td>
+                                    <td>PORT CHARGE 외</td>
+                                    <td>KRW</td>
+                                    <td>₩450,000</td>
+                                    <td>₩450,000</td>
+                                    <td><span class="badge bg-success"><i class="bi bi-check-circle"></i> ERP 전표 매핑 완료</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section id="tools" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center fw-bold mb-5">실무자를 위한 국제물류 스마트 도구</h2>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm p-4 h-100">
+                        <div class="card-body">
+                            <h4 class="fw-bold mb-3"><i class="bi bi-calculator text-primary me-2"></i> 실시간 CBM 계산기</h4>
+                            <p class="text-muted small">박스 규격(L/W/H mm)과 수량을 입력하면 총 CBM과 R.TON(RT) 무게를 자동으로 계산합니다.</p>
+                            <form id="cbmForm" class="row g-3 mt-2">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">가로 (Length, mm)</label>
+                                    <input type="number" class="form-control" id="cbmL" value="1000" placeholder="mm">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">세로 (Width, mm)</label>
+                                    <input type="number" class="form-control" id="cbmW" value="1000" placeholder="mm">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">높이 (Height, mm)</label>
+                                    <input type="number" class="form-control" id="cbmH" value="1000" placeholder="mm">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">수량 (Quantity, Box)</label>
+                                    <input type="number" class="form-control" id="cbmQty" value="5" placeholder="수량">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">총중량 (G/W, kg)</label>
+                                    <input type="number" class="form-control" id="cbmWeight" value="1200" placeholder="kg">
+                                </div>
+                                <div class="col-12 mt-4">
+                                    <button type="button" class="btn btn-primary w-100 fw-bold" onclick="calculateCBM()">계산 실행</button>
+                                </div>
+                            </form>
+                            <div class="mt-4 p-3 bg-light rounded d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="small text-muted">결과 CBM:</span>
+                                    <h4 class="fw-bold text-primary mb-0" id="resultCbm">5.000 CBM</h4>
+                                </div>
+                                <div class="text-end">
+                                    <span class="small text-muted">결과 R.TON:</span>
+                                    <h4 class="fw-bold text-success mb-0" id="resultRt">5.000 RT</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm p-4 h-100">
+                        <div class="card-body">
+                            <h4 class="fw-bold mb-3"><i class="bi bi-info-circle text-success me-2"></i> 선진 스마트 물류 가이드</h4>
+                            <p class="text-muted small">주요 국가 수출입 시 사용하는 국가별 표준 포트 및 Incoterms 기본 정보 테이블입니다.</p>
+                            
+                            <ul class="nav nav-tabs" id="codeTab" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active py-1" id="port-tab" data-bs-toggle="tab" data-bs-target="#port-code" type="button">주요 PORT 코드</button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link py-1" id="incoterms-tab" data-bs-toggle="tab" data-bs-target="#incoterms-code" type="button">Incoterms 핵심요약</button>
+                                </li>
+                            </ul>
+                            <div class="tab-content pt-3" id="codeTabContent">
+                                <div class="tab-pane fade show active" id="port-code">
+                                    <table class="table table-sm table-striped small">
+                                        <thead>
+                                            <tr>
+                                                <th>국가</th>
+                                                <th>코드</th>
+                                                <th>포트명</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>말레이시아</td>
+                                                <td>MYPKN</td>
+                                                <td>Port Klang (Northport)</td>
+                                            </tr>
+                                            <tr>
+                                                <td>말레이시아</td>
+                                                <td>MYPKW</td>
+                                                <td>Port Klang (Westport)</td>
+                                            </tr>
+                                            <tr>
+                                                <td>미국</td>
+                                                <td>USLAX</td>
+                                                <td>Los Angeles Port</td>
+                                            </tr>
+                                            <tr>
+                                                <td>독일</td>
+                                                <td>DEHAM</td>
+                                                <td>Hamburg Port</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="tab-pane fade" id="incoterms-code">
+                                    <table class="table table-sm table-striped small">
+                                        <thead>
+                                            <tr>
+                                                <th>규칙</th>
+                                                <th>구분</th>
+                                                <th>위험 및 비용 이전 기준</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>EXW</strong></td>
+                                                <td>공장인도</td>
+                                                <td>매도인의 공장/작업장에서 모든 리스크 고객사 이전</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>FOB</strong></td>
+                                                <td>본선인도</td>
+                                                <td>수출국 지정항구 선박에 적재 완료 시점에 위험 이전</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>CIF</strong></td>
+                                                <td>운임보험료포함</td>
+                                                <td>FOB 조건에 운송보험료 및 수송 운임을 매도인이 부담</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>DDP</strong></td>
+                                                <td>관세지급인도</td>
+                                                <td>도착지 수입 통관 및 관세까지 매도인이 전부 부담</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-dark text-white py-5">
+        <div class="container text-center text-md-start">
+            <div class="row">
+                <div class="col-md-6 mb-4 mb-md-0">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-globe2 text-primary me-2"></i>SUNJIN LOGISTICS</h5>
+                    <p class="small text-muted mb-1">본사: Sunjin Bldg. 4th Fl. Yangjae daero 1553, Kangdong-Gu, Seoul, Korea</p>
+                    <p class="small text-muted">IT지원센터: info-it@sunjinlogistics.com (인터페이스 연동기술 기술지원 전용)</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="small text-muted mb-0">© 2026 SUNJIN LOGISTICS. All rights reserved.</p>
+                    <p class="small text-muted">Web ERP-FMS Interface Mockup System v2.1</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="modalTitle">인터페이스 수신 상세 로그 (JSON 구조)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="fw-bold"><i class="bi bi-arrow-right-short text-primary"></i> ERP -> FMS 전송 매핑 데이터 필드 목록</p>
+                    <div class="bg-dark text-success p-3 rounded mb-3">
+                        <pre id="jsonViewer" class="mb-0" style="font-family: 'Courier New', Courier, monospace; font-size: 0.85rem;"></pre>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm small">
+                            <tbody>
+                                <tr>
+                                    <th class="bg-light" style="width: 25%">수신 일시</th>
+                                    <td id="mRecvDate"></td>
+                                    <th class="bg-light" style="width: 25%">S/R 번호</th>
+                                    <td id="mSR"></td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">C/I 번호</th>
+                                    <td id="mCI"></td>
+                                    <th class="bg-light">화물 스펙</th>
+                                    <td id="mSpec"></td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light">실행 단계</th>
+                                    <td colspan="3" id="mStatus" class="fw-bold text-primary"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // CBM Calculator Logic
+        function calculateCBM() {
+            const length = parseFloat(document.getElementById('cbmL').value) || 0;
+            const width = parseFloat(document.getElementById('cbmW').value) || 0;
+            const height = parseFloat(document.getElementById('cbmH').value) || 0;
+            const qty = parseInt(document.getElementById('cbmQty').value) || 0;
+            const weight = parseFloat(document.getElementById('cbmWeight').value) || 0;
+
+            // mm단위를 m단위로 환산하여 CBM 계산
+            const cbm = (length / 1000) * (width / 1000) * (height / 1000) * qty;
+            
+            // RT 계산: 1CBM = 1,000kg(1 Ton) 기준으로 더 큰 것을 Revenue Ton으로 책정
+            const weightTon = weight / 1000;
+            const rt = Math.max(cbm, weightTon);
+
+            document.getElementById('resultCbm').textContent = cbm.toFixed(3) + " CBM";
+            document.getElementById('resultRt').textContent = rt.toFixed(3) + " RT";
+        }
+
+        // Live Trace Segment Control
+        function changeTrackDemo(trackId) {
+            const progress = document.getElementById('track-progress');
+            const trackNode3 = document.getElementById('track-node-3');
+            const trackNode3Text = document.getElementById('track-node-3-text');
+            const trackNode4 = document.getElementById('track-node-4');
+            const trackNode4Text = document.getElementById('track-node-4-text');
+            
+            document.getElementById('track-id').textContent = trackId;
+
+            if (trackId === 'SJHB2607901') {
+                progress.style.width = '66%';
+                progress.className = 'progress-bar bg-success';
+                trackNode3.className = 'badge rounded-pill bg-primary';
+                trackNode3Text.innerHTML = '운송중<br><span class="text-muted">(현재단계)</span>';
+                trackNode4.className = 'badge rounded-pill bg-secondary';
+                trackNode4Text.innerHTML = '입항(ETA)<br><span class="text-muted">(07/28 예정)</span>';
+            } else {
+                progress.style.width = '100%';
+                progress.className = 'progress-bar bg-success';
+                trackNode3.className = 'badge rounded-pill bg-success';
+                trackNode3Text.innerHTML = '운송 완료<br><span class="text-muted">(07/12)</span>';
+                trackNode4.className = 'badge rounded-pill bg-success';
+                trackNode4Text.innerHTML = '수입신고완료<br><span class="text-success">(도착완료)</span>';
+            }
+        }
+
+        // Modal Popup Detail Logic (Mocking JSON structures)
+        function showDetail(id, sr, ci, pkg, weight, status, rDate) {
+            const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+            
+            // Generate mock JSON body based on selection
+            const mockJson = {
+                "header": {
+                    "sender": "CUSTOMER_SAP_ERP_S4H",
+                    "receiver": "SUNJIN_FMS",
+                    "interface_id": "INT_ERP_FMS_SR_0019",
+                    "timestamp": rDate
+                },
+                "data": {
+                    "shipping_request_no": sr,
+                    "invoice_no": ci,
+                    "freight_details": {
+                        "package_type": "PALLET/BOX",
+                        "total_quantity": pkg,
+                        "gross_weight": weight
+                    },
+                    "consignee": {
+                        "company_name": "GLOBAL TECH INC.",
+                        "destination_country": "US"
+                    }
+                }
+            };
+
+            document.getElementById('jsonViewer').textContent = JSON.stringify(mockJson, null, 4);
+            document.getElementById('mRecvDate').textContent = rDate;
+            document.getElementById('mSR').textContent = sr;
+            document.getElementById('mCI').textContent = ci;
+            document.getElementById('mSpec').textContent = pkg + " / " + weight;
+            document.getElementById('mStatus').textContent = status;
+            
+            modal.show();
+        }
+    </script>
+</body>
+</html>
